@@ -33,6 +33,18 @@ export class VM {
 		return execMultipass(["start", this.name]);
 	}
 
+	async isRunning(): Promise<boolean> {
+		const result = await execMultipass(["list"]);
+		const lines = result.stdout.trim().split("\n");
+		for (const line of lines.slice(1)) {
+			const parts = line.split(/\s{2,}/);
+			if (parts[0] === this.name) {
+				return parts[1] === "Running";
+			}
+		}
+		return false;
+	}
+
 	async info() {
 		const result = await execMultipass(["info", this.name, "--format", "json"]);
 		return parseVMInfo(this.name, result.stdout);
