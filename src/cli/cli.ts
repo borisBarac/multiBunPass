@@ -1,4 +1,4 @@
-import type { OutputWrapper } from "./out_stream";
+import type { OutputWrapper } from "../out_stream";
 import type { ExecResult } from "./types";
 
 let outputWrapper: OutputWrapper | null = null;
