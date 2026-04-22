@@ -33,8 +33,11 @@ export type CreateVMOptions = {
 };
 
 export type OutputWrapperOptions = {
-	host?: string;
+	/** TCP port to listen on for external client connections (e.g. a dashboard or monitoring tool) */
 	port: number;
+	/** Hostname to bind the TCP server to. Defaults to "0.0.0.0" (all interfaces). Set to "127.0.0.1" for localhost only. */
+	host?: string;
+	/** Whether to also print output to local stdout. Defaults to true. Set to false for headless/daemon usage. */
 	local?: boolean;
 };
 
