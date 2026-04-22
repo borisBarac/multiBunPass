@@ -4,6 +4,7 @@ import type { ExecResult } from "./types";
 const calls: string[][] = [];
 
 mock.module("./cli", () => ({
+	setOutputWrapper: () => {},
 	execMultipass: mock(async (args: string[]) => {
 		calls.push(args);
 		if (args[0] === "info") {
@@ -32,7 +33,7 @@ mock.module("./cli", () => ({
 	}),
 }));
 
-const { VM } = await import("./vm");
+const { VM } = require("./vm");
 
 beforeEach(() => {
 	calls.length = 0;
