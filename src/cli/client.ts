@@ -1,5 +1,6 @@
 import { execMultipass } from "./cli";
 import { writeCloudConfigTempFile } from "./cloud-config";
+import { parseVMInfo } from "./parsers";
 import type { ExecResult, VMInfo } from "./types";
 import { VM } from "./vm";
 
@@ -22,9 +23,10 @@ export class MultiBunPassClient {
 
 		await execMultipass([
 			"launch",
-			"24.04",
+			"lts",
 			"--name",
 			name,
+			"--bridged",
 			"--cloud-init",
 			configPath,
 		]);
@@ -44,6 +46,11 @@ export class MultiBunPassClient {
 	async delete(name: string): Promise<ExecResult> {
 		await execMultipass(["delete", name]);
 		return execMultipass(["purge"]);
+	}
+
+	async info(name: string) {
+		const result = await execMultipass(["info", name, "--format", "json"]);
+		return parseVMInfo(name, result.stdout);
 	}
 
 	get(name: string, folderPath: string, remotePath?: string): VM {

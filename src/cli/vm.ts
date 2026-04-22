@@ -1,4 +1,5 @@
 import { execMultipass } from "./cli";
+import { parseVMInfo } from "./parsers";
 import type { ExecResult } from "./types";
 
 const DEFAULT_REMOTE_PATH = "~/app/";
@@ -28,6 +29,16 @@ export class VM {
 
 	async start(): Promise<ExecResult> {
 		return execMultipass(["start", this.name]);
+	}
+
+	async info() {
+		const result = await execMultipass([
+			"info",
+			this.name,
+			"--format",
+			"json",
+		]);
+		return parseVMInfo(this.name, result.stdout);
 	}
 
 	async resync(): Promise<ExecResult> {
