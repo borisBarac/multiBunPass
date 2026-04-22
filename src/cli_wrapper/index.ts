@@ -1,5 +1,4 @@
 export { execMultipass } from "./cli";
-export type { MultiBunPassClientOptions } from "./client";
 export { MultiBunPassClient } from "./client";
 export { BUN_CLOUD_CONFIG, writeCloudConfigTempFile } from "./cloud-config";
 export type {

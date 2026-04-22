@@ -1,4 +1,3 @@
-export type { MultiBunPassClientOptions } from "./src/cli_wrapper";
 export { execMultipass, MultiBunPassClient, VM } from "./src/cli_wrapper";
 export type {
 	CreateVMOptions,

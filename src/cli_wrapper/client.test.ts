@@ -8,11 +8,6 @@ mock.module("./cloud-config", () => ({
 	BUN_CLOUD_CONFIG: "",
 }));
 
-// biome-ignore lint/suspicious/noExplicitAny: mock types are intentionally loose
-const setOutputWrapperCalls: (any | null)[] = [];
-// biome-ignore lint/suspicious/noExplicitAny: mock instance needs flexible typing
-let mockOutputWrapperInstance: any = null;
-
 mock.module("./cli", () => ({
 	execMultipass: mock(async (args: string[]): Promise<ExecResult> => {
 		calls.push(args);
@@ -64,41 +59,7 @@ mock.module("./cli", () => ({
 		}
 		return { stdout: "", stderr: "", exitCode: 0 } as ExecResult;
 	}),
-	// biome-ignore lint/suspicious/noExplicitAny: mock callback needs flexible typing
-	setOutputWrapper: mock((wrapper: any) => {
-		setOutputWrapperCalls.push(wrapper);
-	}),
 }));
-
-mock.module("../out_stream", () => {
-	class MockOutputWrapper {
-		// biome-ignore lint/suspicious/noExplicitAny: mock class needs flexible typing
-		opts: any;
-		startCalled = false;
-		closeCalled = false;
-		// biome-ignore lint/suspicious/noExplicitAny: mock constructor needs flexible typing
-		constructor(opts: any) {
-			this.opts = opts;
-			mockOutputWrapperInstance = this;
-		}
-		async start() {
-			this.startCalled = true;
-		}
-		async close() {
-			this.closeCalled = true;
-		}
-		status() {
-			return {
-				listening: this.startCalled,
-				clientConnected: false,
-				host: this.opts?.host || "0.0.0.0",
-				port: this.opts?.port || 0,
-				bytesSent: 0,
-			};
-		}
-	}
-	return { OutputWrapper: MockOutputWrapper };
-});
 
 const { MultiBunPassClient } = require("./client");
 const { VM } = require("./vm");
@@ -180,51 +141,5 @@ describe("MultiBunPassClient", () => {
 		expect(info.disk).toEqual({ used: "2.1GiB", total: "4.8GiB" });
 		expect(info.memory).toEqual({ used: "202.6MiB", total: "952.1MiB" });
 		expect(info.mounts).toEqual([]);
-	});
-});
-
-describe("MultiBunPassClient streaming", () => {
-	test("constructor without opts creates no wrapper", () => {
-		const noStream = new MultiBunPassClient();
-		expect(noStream.status()).toBeNull();
-	});
-
-	test("constructor with stream opts creates wrapper and calls setOutputWrapper", () => {
-		setOutputWrapperCalls.length = 0;
-		mockOutputWrapperInstance = null;
-
-		const _streamClient = new MultiBunPassClient({ stream: { port: 9090 } });
-		expect(mockOutputWrapperInstance).not.toBeNull();
-		expect(mockOutputWrapperInstance.opts.port).toBe(9090);
-		expect(setOutputWrapperCalls).toHaveLength(1);
-	});
-
-	test("init starts the wrapper", async () => {
-		mockOutputWrapperInstance = null;
-		const streamClient = new MultiBunPassClient({ stream: { port: 8080 } });
-		await streamClient.init();
-		expect(mockOutputWrapperInstance.startCalled).toBe(true);
-	});
-
-	test("close closes wrapper and resets setOutputWrapper to null", async () => {
-		setOutputWrapperCalls.length = 0;
-		mockOutputWrapperInstance = null;
-
-		const streamClient = new MultiBunPassClient({ stream: { port: 8080 } });
-		await streamClient.init();
-		await streamClient.close();
-
-		expect(mockOutputWrapperInstance.closeCalled).toBe(true);
-		expect(setOutputWrapperCalls.at(-1)).toBeNull();
-		expect(streamClient.status()).toBeNull();
-	});
-
-	test("status returns wrapper status when streaming", async () => {
-		const streamClient = new MultiBunPassClient({ stream: { port: 7070 } });
-		await streamClient.init();
-		const s = streamClient.status();
-		expect(s).not.toBeNull();
-		expect(s?.port).toBe(7070);
-		await streamClient.close();
 	});
 });

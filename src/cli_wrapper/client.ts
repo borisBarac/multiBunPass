@@ -1,40 +1,13 @@
-import { OutputWrapper } from "../out_stream";
-import { execMultipass, setOutputWrapper } from "./cli";
+import { execMultipass } from "./cli";
 import { writeCloudConfigTempFile } from "./cloud-config";
 import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
-import type { ExecResult, OutputWrapperOptions, VMInfo } from "./types";
+import type { ExecResult, VMInfo } from "./types";
 import { VM } from "./vm";
 
 const DEFAULT_REMOTE_PATH = "~/app/";
 
-export type MultiBunPassClientOptions = {
-	stream?: OutputWrapperOptions;
-};
-
 export class MultiBunPassClient {
-	private wrapper: OutputWrapper | null = null;
-
-	constructor(opts?: MultiBunPassClientOptions) {
-		if (opts?.stream) {
-			this.wrapper = new OutputWrapper(opts.stream);
-			setOutputWrapper(this.wrapper);
-		}
-	}
-
-	async init(): Promise<void> {
-		await this.wrapper?.start();
-	}
-
-	async close(): Promise<void> {
-		await this.wrapper?.close();
-		setOutputWrapper(null);
-		this.wrapper = null;
-	}
-
-	status() {
-		return this.wrapper?.status() ?? null;
-	}
 	async list(): Promise<VMInfo[]> {
 		const result = await execMultipass(["list", "--format", "json"]);
 		try {

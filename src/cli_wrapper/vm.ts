@@ -1,9 +1,29 @@
-import { execMultipass } from "./cli";
+import { OutputWrapper } from "../out_stream";
+import { execMultipass, setOutputWrapper } from "./cli";
 import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
 import type { ExecResult } from "./types";
 
 const DEFAULT_REMOTE_PATH = "~/app/";
+
+async function isPortAvailable(port: number): Promise<boolean> {
+	try {
+		const server = Bun.listen({
+			hostname: "0.0.0.0",
+			port,
+			socket: {
+				data() {},
+				open() {},
+				close() {},
+				error() {},
+			},
+		});
+		server.stop();
+		return true;
+	} catch {
+		return false;
+	}
+}
 
 export class VM {
 	readonly name: string;
@@ -16,9 +36,34 @@ export class VM {
 		this.remotePath = remotePath || DEFAULT_REMOTE_PATH;
 	}
 
-	async exec(command: string): Promise<ExecResult> {
+	private async execRaw(command: string): Promise<ExecResult> {
 		log.debug(`exec on ${this.name}: ${command}`);
 		return execMultipass(["exec", this.name, "--", "bash", "-lc", command]);
+	}
+
+	async exec(command: string, streamPort?: number): Promise<ExecResult> {
+		if (streamPort === undefined) {
+			return this.execRaw(command);
+		}
+
+		const available = await isPortAvailable(streamPort);
+		if (!available) {
+			return {
+				stdout: "",
+				stderr: `Port ${streamPort} is already in use`,
+				exitCode: 1,
+			};
+		}
+
+		const wrapper = new OutputWrapper({ port: streamPort });
+		try {
+			await wrapper.start();
+			setOutputWrapper(wrapper);
+			return await this.execRaw(command);
+		} finally {
+			setOutputWrapper(null);
+			await wrapper.close();
+		}
 	}
 
 	getLocalPath(): string {
