@@ -1,6 +1,17 @@
 import type { ExecResult } from "./types";
+import type { OutputWrapper } from "./out_stream";
+
+let outputWrapper: OutputWrapper | null = null;
+
+export function setOutputWrapper(wrapper: OutputWrapper | null): void {
+  outputWrapper = wrapper;
+}
 
 export async function execMultipass(args: string[]): Promise<ExecResult> {
+  if (outputWrapper) {
+    return outputWrapper.spawnAndWrap(["multipass", ...args]);
+  }
+
   const proc = Bun.spawn(["multipass", ...args], {
     stdout: "pipe",
     stderr: "pipe",

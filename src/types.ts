@@ -17,3 +17,17 @@ export type CreateVMOptions = {
   folderPath: string;
   remotePath?: string;
 };
+
+export type OutputWrapperOptions = {
+  host?: string;
+  port: number;
+  local?: boolean;
+};
+
+export type OutputWrapperStatus = {
+  listening: boolean;
+  clientConnected: boolean;
+  host: string;
+  port: number;
+  bytesSent: number;
+};

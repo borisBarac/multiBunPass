@@ -1,3 +1,5 @@
 export { MultiBunPassClient } from "./src/client";
 export { VM } from "./src/vm";
-export type { ExecResult, VMInfo, CreateVMOptions } from "./src/types";
+export { OutputWrapper } from "./src/out_stream";
+export { setOutputWrapper } from "./src/cli";
+export type { ExecResult, VMInfo, CreateVMOptions, OutputWrapperOptions, OutputWrapperStatus } from "./src/types";
