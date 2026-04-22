@@ -30,6 +30,28 @@ mock.module("./cli", () => ({
 				exitCode: 0,
 			} as ExecResult;
 		}
+		if (args[0] === "info") {
+			return {
+				stdout: JSON.stringify({
+					info: {
+						"renewed-kakapo": {
+							state: "Running",
+							snapshots: { count: 0 },
+							ipv4: ["192.168.2.4", "192.168.0.196"],
+							release: { extended_status: "Ubuntu 24.04.4 LTS" },
+							image_hash: "1ea801e659d2",
+							cpu_count: { total: 1 },
+							load: [0.04, 0.06, 0.02],
+							disk: { used: "2.1GiB", total: "4.8GiB" },
+							memory: { used: "202.6MiB", total: "952.1MiB" },
+							mounts: {},
+						},
+					},
+				}),
+				stderr: "",
+				exitCode: 0,
+			} as ExecResult;
+		}
 		return { stdout: "", stderr: "", exitCode: 0 } as ExecResult;
 	}),
 }));
@@ -85,6 +107,8 @@ describe("MultiBunPassClient", () => {
 
 		const launchCall = calls.find((c) => c[0] === "launch");
 		expect(launchCall).toBeDefined();
+		expect(launchCall).toContain("lts");
+		expect(launchCall).toContain("--bridged");
 		expect(launchCall).toContain("--name");
 		expect(launchCall).toContain("newvm");
 		expect(launchCall).toContain("--cloud-init");
@@ -102,5 +126,20 @@ describe("MultiBunPassClient", () => {
 		const _vm = await client.create("newvm", "/my/project", "~/src/");
 		const transferCall = calls.find((c) => c[0] === "transfer");
 		expect(transferCall).toContain("newvm:~/src/");
+	});
+
+	test("info returns parsed VMDetailedInfo", async () => {
+		const info = await client.info("renewed-kakapo");
+		expect(info.name).toBe("renewed-kakapo");
+		expect(info.state).toBe("Running");
+		expect(info.snapshots).toBe(0);
+		expect(info.ipv4).toEqual(["192.168.2.4", "192.168.0.196"]);
+		expect(info.release).toBe("Ubuntu 24.04.4 LTS");
+		expect(info.image_hash).toBe("1ea801e659d2");
+		expect(info.cpu_count).toBe(1);
+		expect(info.load).toEqual([0.04, 0.06, 0.02]);
+		expect(info.disk).toEqual({ used: "2.1GiB", total: "4.8GiB" });
+		expect(info.memory).toEqual({ used: "202.6MiB", total: "952.1MiB" });
+		expect(info.mounts).toEqual([]);
 	});
 });
