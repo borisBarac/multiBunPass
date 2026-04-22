@@ -1,9 +1,9 @@
-import { log } from "../cli/logger";
+import { log } from "../cli_wrapper/logger";
 import type {
 	ExecResult,
 	OutputWrapperOptions,
 	OutputWrapperStatus,
-} from "../cli/types";
+} from "../cli_wrapper/types";
 
 type InternalOptions = Required<OutputWrapperOptions>;
 

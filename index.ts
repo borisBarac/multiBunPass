@@ -1,5 +1,5 @@
-export type { MultiBunPassClientOptions } from "./src/cli";
-export { execMultipass, MultiBunPassClient, VM } from "./src/cli";
+export type { MultiBunPassClientOptions } from "./src/cli_wrapper";
+export { execMultipass, MultiBunPassClient, VM } from "./src/cli_wrapper";
 export type {
 	CreateVMOptions,
 	ExecResult,
@@ -7,5 +7,5 @@ export type {
 	OutputWrapperStatus,
 	VMDetailedInfo,
 	VMInfo,
-} from "./src/cli/types";
+} from "./src/cli_wrapper/types";
 export { OutputWrapper } from "./src/out_stream";
