@@ -14,8 +14,8 @@ runcmd:
 `;
 
 export function writeCloudConfigTempFile(): string {
-  const tmpDir = Bun.env.TMPDIR || "/tmp";
-  const path = `${tmpDir}/multibunpass-cloud-config.yaml`;
-  Bun.write(path, BUN_CLOUD_CONFIG);
-  return path;
+	const tmpDir = Bun.env.TMPDIR || "/tmp";
+	const path = `${tmpDir}/multibunpass-cloud-config.yaml`;
+	Bun.write(path, BUN_CLOUD_CONFIG);
+	return path;
 }
