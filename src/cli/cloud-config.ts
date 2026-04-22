@@ -1,3 +1,5 @@
+import { log } from "./logger";
+
 export const BUN_CLOUD_CONFIG = `#cloud-config
 package_update: true
 packages:
@@ -16,6 +18,7 @@ runcmd:
 export function writeCloudConfigTempFile(): string {
 	const tmpDir = Bun.env.TMPDIR || "/tmp";
 	const path = `${tmpDir}/multibunpass-cloud-config.yaml`;
+	log.debug(`writing cloud-config to ${path}`);
 	Bun.write(path, BUN_CLOUD_CONFIG);
 	return path;
 }

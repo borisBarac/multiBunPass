@@ -1,4 +1,5 @@
 import { execMultipass } from "./cli";
+import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
 import type { ExecResult } from "./types";
 
@@ -16,6 +17,7 @@ export class VM {
 	}
 
 	async exec(command: string): Promise<ExecResult> {
+		log.debug(`exec on ${this.name}: ${command}`);
 		return execMultipass(["exec", this.name, "--", "bash", "-lc", command]);
 	}
 
@@ -32,24 +34,26 @@ export class VM {
 	}
 
 	async info() {
-		const result = await execMultipass([
-			"info",
-			this.name,
-			"--format",
-			"json",
-		]);
+		const result = await execMultipass(["info", this.name, "--format", "json"]);
 		return parseVMInfo(this.name, result.stdout);
 	}
 
 	async resync(): Promise<ExecResult> {
-		await execMultipass([
-			"exec",
-			this.name,
-			"--",
-			"bash",
-			"-c",
-			`rm -rf ${this.remotePath}*`,
-		]);
+		log.debug(`resync: clearing ${this.remotePath} on ${this.name}`);
+		try {
+			await execMultipass([
+				"exec",
+				this.name,
+				"--",
+				"bash",
+				"-c",
+				`rm -rf ${this.remotePath}*`,
+			]);
+		} catch (err) {
+			log.warn(
+				`resync: failed to clear remote path on ${this.name}: ${(err as Error).message}`,
+			);
+		}
 		return execMultipass([
 			"transfer",
 			"--recursive",

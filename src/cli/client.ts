@@ -1,9 +1,10 @@
+import { OutputWrapper } from "../out_stream";
 import { execMultipass, setOutputWrapper } from "./cli";
 import { writeCloudConfigTempFile } from "./cloud-config";
+import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
-import type { ExecResult, OutputWrapperOptions, VMDetailedInfo, VMInfo } from "./types";
+import type { ExecResult, OutputWrapperOptions, VMInfo } from "./types";
 import { VM } from "./vm";
-import { OutputWrapper } from "../out_stream";
 
 const DEFAULT_REMOTE_PATH = "~/app/";
 
@@ -36,8 +37,15 @@ export class MultiBunPassClient {
 	}
 	async list(): Promise<VMInfo[]> {
 		const result = await execMultipass(["list", "--format", "json"]);
-		const parsed = JSON.parse(result.stdout);
-		return parsed.list || [];
+		try {
+			const parsed = JSON.parse(result.stdout);
+			return parsed.list || [];
+		} catch (err) {
+			log.error(
+				`failed to parse list output: ${(err as Error).message}, raw: ${result.stdout.slice(0, 200)}`,
+			);
+			throw err;
+		}
 	}
 
 	async create(
@@ -46,6 +54,8 @@ export class MultiBunPassClient {
 		remotePath?: string,
 	): Promise<VM> {
 		const dest = remotePath || DEFAULT_REMOTE_PATH;
+		log.info(`creating VM "${name}" from ${folderPath}`);
+
 		const configPath = writeCloudConfigTempFile();
 
 		await execMultipass([
@@ -58,8 +68,10 @@ export class MultiBunPassClient {
 			configPath,
 		]);
 
+		log.debug(`VM "${name}" launched, waiting for cloud-init`);
 		await this.waitForCloudInit(name);
 
+		log.debug(`transferring ${folderPath} → ${name}:${dest}`);
 		await execMultipass([
 			"transfer",
 			"--recursive",
@@ -67,10 +79,12 @@ export class MultiBunPassClient {
 			`${name}:${dest}`,
 		]);
 
+		log.info(`VM "${name}" created successfully`);
 		return new VM(name, folderPath, remotePath);
 	}
 
 	async delete(name: string): Promise<ExecResult> {
+		log.info(`deleting VM "${name}"`);
 		await execMultipass(["delete", name]);
 		return execMultipass(["purge"]);
 	}
@@ -101,8 +115,10 @@ export class MultiBunPassClient {
 				if (result.stdout.includes("DONE")) {
 					return;
 				}
-			} catch {
-				// VM might not be ready yet
+			} catch (err) {
+				log.warn(
+					`cloud-init check failed on attempt ${i + 1}/${maxAttempts} for "${name}": ${(err as Error).message}`,
+				);
 			}
 			await Bun.sleep(delayMs);
 		}

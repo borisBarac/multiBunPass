@@ -1,3 +1,4 @@
+import { log } from "../cli/logger";
 import type {
 	ExecResult,
 	OutputWrapperOptions,
@@ -25,32 +26,45 @@ export class OutputWrapper {
 
 	async start(): Promise<void> {
 		const handler = this;
-		this.server = Bun.listen({
-			hostname: this.opts.host,
-			port: this.opts.port,
-			socket: {
-				data() {},
-				open(socket) {
-					if (handler.client) {
-						socket.end();
-						return;
-					}
-					handler.client = socket;
-					for (const chunk of handler.pendingData) {
-						socket.write(chunk);
-					}
-					handler.pendingData = [];
+		try {
+			this.server = Bun.listen({
+				hostname: this.opts.host,
+				port: this.opts.port,
+				socket: {
+					data() {},
+					open(socket) {
+						if (handler.client) {
+							log.warn("rejecting additional client connection");
+							socket.end();
+							return;
+						}
+						handler.client = socket;
+						log.info(
+							`OutputWrapper client connected from ${socket.remoteAddress}`,
+						);
+						for (const chunk of handler.pendingData) {
+							socket.write(chunk);
+						}
+						handler.pendingData = [];
+					},
+					close(socket) {
+						if (handler.client === socket) {
+							handler.client = null;
+							log.debug("OutputWrapper client disconnected");
+						}
+					},
+					error(_socket, error) {
+						log.error(`OutputWrapper socket error: ${error}`);
+					},
 				},
-				close(socket) {
-					if (handler.client === socket) {
-						handler.client = null;
-					}
-				},
-				error(_socket, error) {
-					console.error(`OutputWrapper socket error: ${error}`);
-				},
-			},
-		});
+			});
+			log.info(
+				`OutputWrapper listening on ${this.opts.host}:${this.opts.port}`,
+			);
+		} catch (err) {
+			log.error(`failed to start OutputWrapper: ${(err as Error).message}`);
+			throw err;
+		}
 	}
 
 	write(data: string | Uint8Array): void {
@@ -125,6 +139,7 @@ export class OutputWrapper {
 	}
 
 	async close(): Promise<void> {
+		log.debug(`OutputWrapper closed, ${this.bytesSent} bytes sent`);
 		this.client?.end();
 		this.server?.stop();
 		this.client = null;
