@@ -1,0 +1,30 @@
+{
+	"version": 1,
+	"skills": {
+		"biome-developer": {
+			"source": "biomejs/biome",
+			"sourceType": "github",
+			"computedHash": "3a9e05cb3f7254cc8adb9341716f3a056beaee54836f76bfd9968e71a510a513"
+		},
+		"formatter-development": {
+			"source": "biomejs/biome",
+			"sourceType": "github",
+			"computedHash": "a39c1f60c55c2de239808b07b7212c49b59d6150e83dfda7d3297f6508dc4a09"
+		},
+		"lint-rule-development": {
+			"source": "biomejs/biome",
+			"sourceType": "github",
+			"computedHash": "84253367e622b72ab0701727cf9c83c83e2a2529679bfdaa4d4104a179de22c8"
+		},
+		"testing-codegen": {
+			"source": "biomejs/biome",
+			"sourceType": "github",
+			"computedHash": "91a2d450ad5b314e40898c912c01949f053bbf91d30e294981b6058f653cd618"
+		},
+		"type-inference": {
+			"source": "biomejs/biome",
+			"sourceType": "github",
+			"computedHash": "9a5925380f9dcc2e75a5a4642d0baaa49e7e43d06414d2ad614d5033b6168f66"
+		}
+	}
+}
