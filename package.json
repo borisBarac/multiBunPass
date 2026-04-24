@@ -1,6 +1,9 @@
 {
 	"name": "multibunpass",
 	"module": "index.ts",
+	"bin": {
+		"multibunpass-mcp": "src/mcp/index.ts"
+	},
 	"type": "module",
 	"scripts": {
 		"lint": "biome check .",
@@ -16,5 +19,9 @@
 	},
 	"peerDependencies": {
 		"typescript": "^5"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/server": "^2.0.0-alpha.2",
+		"zod": "^4.3.6"
 	}
 }
