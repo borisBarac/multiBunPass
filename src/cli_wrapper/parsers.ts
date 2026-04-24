@@ -7,9 +7,7 @@ export function parseVMInfo(name: string, json: string): VMDetailedInfo {
 		throw new Error(`No info returned for VM "${name}"`);
 	}
 
-	const diskEntry = raw.disks
-		? Object.values(raw.disks)[0]
-		: undefined;
+	const diskEntry = raw.disks ? Object.values(raw.disks)[0] : undefined;
 
 	return {
 		name,

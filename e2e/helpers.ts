@@ -89,9 +89,7 @@ export async function setupVM(
 	const existing = vms.find((v) => v.name === vmName);
 
 	if (existing) {
-		console.log(
-			`    VM "${vmName}" already exists (state=${existing.state})`,
-		);
+		console.log(`    VM "${vmName}" already exists (state=${existing.state})`);
 		const vm = client.get(vmName, tmpDir, remotePath);
 		if (existing.state !== "Running") {
 			await vm.start();

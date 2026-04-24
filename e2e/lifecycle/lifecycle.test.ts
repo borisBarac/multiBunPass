@@ -52,9 +52,13 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 			},
 		);
 
-		await step("setup: create MultiBunPassClient", { critical: true }, async () => {
-			client = new MultiBunPassClient();
-		});
+		await step(
+			"setup: create MultiBunPassClient",
+			{ critical: true },
+			async () => {
+				client = new MultiBunPassClient();
+			},
+		);
 
 		await step("create or reuse VM", { critical: true }, async () => {
 			await setupVM(client, VM_NAME, tmpDir, E2E_REMOTE_PATH);
@@ -134,12 +138,15 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 			});
 		}
 
-		await step("exec with stream: bun --version via OutputWrapper", async () => {
-			const vm = client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
-			const result = await vm.exec("bun --version", STREAM_PORT);
-			expect(result.exitCode).toBe(0);
-			console.log(`    stdout: ${result.stdout.trim()}`);
-		});
+		await step(
+			"exec with stream: bun --version via OutputWrapper",
+			async () => {
+				const vm = client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
+				const result = await vm.exec("bun --version", STREAM_PORT);
+				expect(result.exitCode).toBe(0);
+				console.log(`    stdout: ${result.stdout.trim()}`);
+			},
+		);
 
 		if (CLEANUP) {
 			await step("cleanup: delete VM", async () => {

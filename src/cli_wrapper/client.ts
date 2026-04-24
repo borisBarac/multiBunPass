@@ -50,14 +50,7 @@ export class MultiBunPassClient {
 		await this.waitForCloudInit(name);
 
 		log.debug(`creating remote directory ${dest} on ${name}`);
-		await execMultipass([
-			"exec",
-			name,
-			"--",
-			"mkdir",
-			"-p",
-			resolvePath(dest),
-		]);
+		await execMultipass(["exec", name, "--", "mkdir", "-p", resolvePath(dest)]);
 
 		log.debug(`transferring ${folderPath} → ${name}:${dest}`);
 		const resolvedDest = resolvePath(dest);
@@ -69,9 +62,7 @@ export class MultiBunPassClient {
 		]);
 
 		const folderName = basename(folderPath.replace(/\/+$/, ""));
-		log.debug(
-			`flattening ${resolvedDest}${folderName}/ → ${resolvedDest}`,
-		);
+		log.debug(`flattening ${resolvedDest}${folderName}/ → ${resolvedDest}`);
 		await execMultipass([
 			"exec",
 			name,

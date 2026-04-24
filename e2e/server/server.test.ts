@@ -50,9 +50,13 @@ describe("E2E: Bun server in VM", () => {
 			},
 		);
 
-		await step("setup: create MultiBunPassClient", { critical: true }, async () => {
-			client = new MultiBunPassClient();
-		});
+		await step(
+			"setup: create MultiBunPassClient",
+			{ critical: true },
+			async () => {
+				client = new MultiBunPassClient();
+			},
+		);
 
 		await step("create or reuse VM", { critical: true }, async () => {
 			vm = await setupVM(client, VM_NAME, tmpDir, E2E_REMOTE_PATH);
@@ -110,60 +114,63 @@ describe("E2E: Bun server in VM", () => {
 			console.log(`    response: "${body}"`);
 		});
 
-		await step("streaming: exec curl via OutputWrapper and verify TCP data", async () => {
-			const execPromise = vm.exec(
-				`curl -s http://localhost:${SERVER_PORT}/ && sleep 0.5`,
-				STREAM_PORT,
-			);
-
-			const tcpData = await new Promise<string>((resolve, reject) => {
-				const deadline = setTimeout(
-					() => reject(new Error("TCP connection timeout")),
-					15000,
+		await step(
+			"streaming: exec curl via OutputWrapper and verify TCP data",
+			async () => {
+				const execPromise = vm.exec(
+					`curl -s http://localhost:${SERVER_PORT}/ && sleep 0.5`,
+					STREAM_PORT,
 				);
-				let data = "";
 
-				const tryConnect = (attempt: number) => {
-					Bun.connect({
-						hostname: "127.0.0.1",
-						port: STREAM_PORT,
-						socket: {
-							data(_socket, chunk) {
-								data += Buffer.from(chunk).toString();
-							},
-							open() {},
-							close() {
-								clearTimeout(deadline);
-								resolve(data);
-							},
-							error(_socket, err) {
-								if (attempt < 100) {
-									setTimeout(() => tryConnect(attempt + 1), 30);
-								} else {
+				const tcpData = await new Promise<string>((resolve, reject) => {
+					const deadline = setTimeout(
+						() => reject(new Error("TCP connection timeout")),
+						15000,
+					);
+					let data = "";
+
+					const tryConnect = (attempt: number) => {
+						Bun.connect({
+							hostname: "127.0.0.1",
+							port: STREAM_PORT,
+							socket: {
+								data(_socket, chunk) {
+									data += Buffer.from(chunk).toString();
+								},
+								open() {},
+								close() {
 									clearTimeout(deadline);
-									reject(err);
-								}
+									resolve(data);
+								},
+								error(_socket, err) {
+									if (attempt < 100) {
+										setTimeout(() => tryConnect(attempt + 1), 30);
+									} else {
+										clearTimeout(deadline);
+										reject(err);
+									}
+								},
 							},
-						},
-					}).catch(() => {
-						if (attempt < 100) {
-							setTimeout(() => tryConnect(attempt + 1), 30);
-						} else {
-							clearTimeout(deadline);
-							reject(new Error("TCP connect failed after 100 retries"));
-						}
-					});
-				};
-				tryConnect(0);
-			});
+						}).catch(() => {
+							if (attempt < 100) {
+								setTimeout(() => tryConnect(attempt + 1), 30);
+							} else {
+								clearTimeout(deadline);
+								reject(new Error("TCP connect failed after 100 retries"));
+							}
+						});
+					};
+					tryConnect(0);
+				});
 
-			const result = await execPromise;
-			expect(result.exitCode).toBe(0);
-			expect(result.stdout).toContain("Hello from MultiBunPass!");
-			expect(tcpData.length).toBeGreaterThan(0);
-			console.log(`    TCP received ${tcpData.length} bytes`);
-			console.log(`    exec stdout: "${result.stdout.trim()}"`);
-		});
+				const result = await execPromise;
+				expect(result.exitCode).toBe(0);
+				expect(result.stdout).toContain("Hello from MultiBunPass!");
+				expect(tcpData.length).toBeGreaterThan(0);
+				console.log(`    TCP received ${tcpData.length} bytes`);
+				console.log(`    exec stdout: "${result.stdout.trim()}"`);
+			},
+		);
 
 		await step("kill server process", async () => {
 			try {
@@ -178,7 +185,9 @@ describe("E2E: Bun server in VM", () => {
 				`curl -s -o /dev/null -w '%{http_code}' http://localhost:${SERVER_PORT}/ --max-time 2 || echo "failed"`,
 			);
 			const code = result.stdout.trim();
-			expect(code === "000" || code === "failed" || !code.startsWith("2")).toBe(true);
+			expect(code === "000" || code === "failed" || !code.startsWith("2")).toBe(
+				true,
+			);
 			console.log(`    curl exit: ${code}`);
 		});
 
