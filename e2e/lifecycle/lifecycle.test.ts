@@ -2,74 +2,22 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { MultiBunPassClient } from "../src/cli_wrapper";
+import { MultiBunPassClient } from "../../src/cli_wrapper";
+import {
+	getStepResults,
+	printSummary,
+	resetStepResults,
+	setupVM,
+	step,
+} from "../helpers";
 
 const VM_NAME = Bun.env.E2E_VM_NAME || `mbp-e2e-${Date.now()}`;
 const CLEANUP = Bun.env.E2E_CLEANUP === "true";
 const STREAM_PORT = Number(Bun.env.E2E_STREAM_PORT) || 19876;
 const E2E_REMOTE_PATH = "~/app/";
 
-interface StepResult {
-	step: string;
-	ok: boolean;
-	ms: number;
-	err?: string;
-}
-
-const results: StepResult[] = [];
 let client: MultiBunPassClient;
 let tmpDir: string;
-let vmConnected = false;
-
-async function step(name: string, fn: () => Promise<void>): Promise<void>;
-async function step(
-	name: string,
-	opts: { critical?: boolean },
-	fn: () => Promise<void>,
-): Promise<void>;
-async function step(
-	name: string,
-	opts?: { critical?: boolean } | (() => Promise<void>),
-	fn?: () => Promise<void>,
-) {
-	if (!fn) {
-		fn = (opts as () => Promise<void>) ?? (async () => {});
-		opts = undefined;
-	}
-	const start = performance.now();
-	try {
-		await fn();
-		const ms = Math.round(performance.now() - start);
-		results.push({ step: name, ok: true, ms });
-		console.log(`  ✓ ${name} (${ms}ms)`);
-	} catch (err) {
-		const ms = Math.round(performance.now() - start);
-		const msg = (err as Error).message;
-		results.push({ step: name, ok: false, ms, err: msg });
-		console.error(`  ✗ ${name} (${ms}ms): ${msg}`);
-		if (opts?.critical) {
-			console.error(`  ⛔ CRITICAL FAILURE — aborting scenario`);
-			throw err;
-		}
-	}
-}
-
-function printSummary() {
-	console.log("\n─────────────────────────────────────────");
-	console.log("E2E Test Summary");
-	console.log("─────────────────────────────────────────");
-	const passed = results.filter((r) => r.ok).length;
-	const failed = results.filter((r) => !r.ok).length;
-	for (const r of results) {
-		const icon = r.ok ? "✓" : "✗";
-		const suffix = r.err ? ` — ${r.err.slice(0, 120)}` : "";
-		console.log(`  ${icon} ${r.step} (${r.ms}ms)${suffix}`);
-	}
-	console.log(
-		`\n  ${passed} passed, ${failed} failed out of ${results.length} steps`,
-	);
-	console.log("─────────────────────────────────────────");
-}
 
 describe("E2E: Full MultiBunPass lifecycle", () => {
 	beforeAll(() => {
@@ -84,6 +32,7 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 	});
 
 	test("full scenario", async () => {
+		resetStepResults();
 		await step(
 			"setup: create temp dir with sample files",
 			{ critical: true },
@@ -108,23 +57,7 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 		});
 
 		await step("create or reuse VM", { critical: true }, async () => {
-			const vms = await client.list();
-			const existing = vms.find((v) => v.name === VM_NAME);
-
-			if (existing) {
-				console.log(
-					`    VM "${VM_NAME}" already exists (state=${existing.state})`,
-				);
-				const vm = client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
-				if (existing.state !== "Running") {
-					await vm.start();
-				}
-				await vm.resync();
-			} else {
-				console.log(`    VM "${VM_NAME}" not found, creating...`);
-				await client.create(VM_NAME, tmpDir, E2E_REMOTE_PATH);
-			}
-			vmConnected = true;
+			await setupVM(client, VM_NAME, tmpDir, E2E_REMOTE_PATH);
 		});
 
 		await step("list includes new VM", async () => {
@@ -147,7 +80,7 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 			);
 		});
 
-		if (vmConnected) {
+		{
 			const vm = client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
 
 			await step("exec: bun --version", async () => {
@@ -199,8 +132,6 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 				expect(lsResult.stdout).toContain("I am new");
 				console.log(`    hello.txt now: "${catResult.stdout.trim()}"`);
 			});
-		} else {
-			console.log("  ⏭ skipping VM-dependent steps (no VM)");
 		}
 
 		await step("exec with stream: bun --version via OutputWrapper", async () => {
@@ -223,6 +154,7 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 			console.log("  ⏭ cleanup skipped (E2E_CLEANUP=false)");
 		}
 
+		const results = getStepResults();
 		const failed = results.filter((r) => !r.ok);
 		if (failed.length > 0) {
 			console.log(
