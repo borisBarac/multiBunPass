@@ -4,8 +4,13 @@ import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
 import type { ExecResult, VMInfo } from "./types";
 import { VM } from "./vm";
+import { basename } from "node:path";
 
 const DEFAULT_REMOTE_PATH = "~/app/";
+
+function resolvePath(path: string): string {
+	return path.startsWith("~/") ? `/home/ubuntu/${path.slice(2)}` : path;
+}
 
 export class MultiBunPassClient {
 	async list(): Promise<VMInfo[]> {
@@ -44,12 +49,36 @@ export class MultiBunPassClient {
 		log.debug(`VM "${name}" launched, waiting for cloud-init`);
 		await this.waitForCloudInit(name);
 
+		log.debug(`creating remote directory ${dest} on ${name}`);
+		await execMultipass([
+			"exec",
+			name,
+			"--",
+			"mkdir",
+			"-p",
+			resolvePath(dest),
+		]);
+
 		log.debug(`transferring ${folderPath} → ${name}:${dest}`);
+		const resolvedDest = resolvePath(dest);
 		await execMultipass([
 			"transfer",
 			"--recursive",
 			folderPath,
-			`${name}:${dest}`,
+			`${name}:${resolvedDest}`,
+		]);
+
+		const folderName = basename(folderPath.replace(/\/+$/, ""));
+		log.debug(
+			`flattening ${resolvedDest}${folderName}/ → ${resolvedDest}`,
+		);
+		await execMultipass([
+			"exec",
+			name,
+			"--",
+			"bash",
+			"-lc",
+			`shopt -s dotglob && mv '${resolvedDest}${folderName}'/* '${resolvedDest}' && rmdir '${resolvedDest}${folderName}'`,
 		]);
 
 		log.info(`VM "${name}" created successfully`);

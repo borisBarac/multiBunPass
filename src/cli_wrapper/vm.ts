@@ -3,8 +3,13 @@ import { execMultipass, setOutputWrapper } from "./cli";
 import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
 import type { ExecResult } from "./types";
+import { basename } from "node:path";
 
 const DEFAULT_REMOTE_PATH = "~/app/";
+
+function resolvePath(path: string): string {
+	return path.startsWith("~/") ? `/home/ubuntu/${path.slice(2)}` : path;
+}
 
 async function isPortAvailable(port: number): Promise<boolean> {
 	try {
@@ -96,7 +101,8 @@ export class VM {
 	}
 
 	async resync(): Promise<ExecResult> {
-		log.debug(`resync: clearing ${this.remotePath} on ${this.name}`);
+		const resolvedDest = resolvePath(this.remotePath);
+		log.debug(`resync: clearing ${resolvedDest} on ${this.name}`);
 		try {
 			await execMultipass([
 				"exec",
@@ -104,18 +110,33 @@ export class VM {
 				"--",
 				"bash",
 				"-c",
-				`rm -rf ${this.remotePath}*`,
+				`rm -rf ${resolvedDest}*`,
 			]);
 		} catch (err) {
 			log.warn(
 				`resync: failed to clear remote path on ${this.name}: ${(err as Error).message}`,
 			);
 		}
-		return execMultipass([
+		const result = await execMultipass([
 			"transfer",
 			"--recursive",
 			this.folderPath,
-			`${this.name}:${this.remotePath}`,
+			`${this.name}:${resolvedDest}`,
 		]);
+
+		const folderName = basename(this.folderPath.replace(/\/+$/, ""));
+		log.debug(
+			`resync: flattening ${resolvedDest}${folderName}/ → ${resolvedDest}`,
+		);
+		await execMultipass([
+			"exec",
+			this.name,
+			"--",
+			"bash",
+			"-lc",
+			`shopt -s dotglob && mv '${resolvedDest}${folderName}'/* '${resolvedDest}' && rmdir '${resolvedDest}${folderName}'`,
+		]);
+
+		return result;
 	}
 }

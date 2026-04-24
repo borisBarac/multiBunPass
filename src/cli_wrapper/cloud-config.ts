@@ -4,15 +4,17 @@ export const BUN_CLOUD_CONFIG = `#cloud-config
 package_update: true
 packages:
   - curl
+  - unzip
 
 runcmd:
   - |
-    sudo -i -u ubuntu bash << 'EOF'
-    curl -fsSL https://bun.sh/install | bash
-    export BUN_INSTALL="/home/ubuntu/.bun"
+    curl -fsSL https://bun.sh/install | BUN_INSTALL=/home/ubuntu/.bun bash
+  - |
+    cat >> /home/ubuntu/.profile << 'PROFILE'
+    export BUN_INSTALL="$HOME/.bun"
     export PATH="$BUN_INSTALL/bin:$PATH"
-    bun --version > /home/ubuntu/bun_version.txt
-    EOF
+    PROFILE
+  - /home/ubuntu/.bun/bin/bun --version > /home/ubuntu/bun_version.txt
 `;
 
 export function writeCloudConfigTempFile(): string {
