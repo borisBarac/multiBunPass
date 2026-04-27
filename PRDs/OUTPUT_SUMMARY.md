@@ -2,38 +2,41 @@
 
 ## Overview
 
-`OutputWrapper` is a TCP server component that streams subprocess output to a single connected client (e.g. `nc`). It integrates with the existing `cli.ts` command runner so all `multipass` commands can be streamed in real-time.
+`OutputWrapper` is a TCP client that connects to an external listener and streams subprocess output to it in real-time. It integrates with the existing `cli.ts` command runner so all `multipass` commands can be streamed over TCP.
 
 ## Files Changed
 
 | File | Change |
 |---|---|
-| `src/types.ts` | Added `OutputWrapperOptions` and `OutputWrapperStatus` types |
-| `src/out_stream/index.ts` | New — full `OutputWrapper` class |
-| `src/cli.ts` | Added `setOutputWrapper()` for integration |
+| `src/cli_wrapper/types.ts` | Added `OutputWrapperOptions` and `OutputWrapperStatus` types |
+| `src/out_stream/index.ts` | Full `OutputWrapper` class (TCP client) |
+| `src/cli_wrapper/cli.ts` | Added `setOutputWrapper()` for integration |
 | `index.ts` | Added exports for `OutputWrapper`, `setOutputWrapper`, and new types |
 
 ## Architecture
 
 ```
+External listener (nc -l localhost 9090)
+        │
+        ▲
+        │ TCP connection
+        │
+  OutputWrapper  ←── Bun.connect() to host:port
+        │
+        ▲
 Command Runner (Bun.spawn)
-       │
-       ▼
-  OutputWrapper  ←── TCP server on host:port
-       │
-       └──► 1 connected client (nc or any TCP client)
 ```
 
-- We host a TCP server using `Bun.listen()`
-- The listener connects to us (no `nc -l` needed on our side)
-- **1 connection max** — additional clients are rejected
-- Output is buffered until a client connects, then flushed
+- An external listener (e.g. `nc -l localhost <port>`) must be running **before** `OutputWrapper.start()`
+- `OutputWrapper` connects to it using `Bun.connect()`
+- Once connected, all subprocess output is written to the TCP socket in real-time
+- If no listener is available, `start()` throws `ECONNREFUSED`
 
 ## `OutputWrapperOptions`
 
 ```ts
 type OutputWrapperOptions = {
-  host?: string;       // default "0.0.0.0"
+  host?: string;       // default "localhost"
   port: number;
   local?: boolean;     // also print to local console (default true)
 };
@@ -44,18 +47,17 @@ type OutputWrapperOptions = {
 | Method | Description |
 |---|---|
 | `constructor(opts)` | Configure host, port, local echo |
-| `start()` | Start TCP server |
-| `write(data)` | Send string or Uint8Array to connected client (buffers if no client) |
-| `spawnAndWrap(cmd, opts?)` | Spawn a process, stream stdout+stderr to client, return `ExecResult` |
-| `status()` | Returns `OutputWrapperStatus` (listening, clientConnected, bytesSent) |
-| `close()` | Close client connection and stop server |
+| `start()` | Connect to external TCP listener |
+| `write(data)` | Send string or Uint8Array to connected listener |
+| `spawnAndWrap(cmd, opts?)` | Spawn a process, stream stdout+stderr to listener, return `ExecResult` |
+| `status()` | Returns `OutputWrapperStatus` (connected, host, port, bytesSent) |
+| `close()` | Close TCP connection |
 
 ## `OutputWrapperStatus`
 
 ```ts
 type OutputWrapperStatus = {
-  listening: boolean;
-  clientConnected: boolean;
+  connected: boolean;
   host: string;
   port: number;
   bytesSent: number;
@@ -68,35 +70,44 @@ type OutputWrapperStatus = {
 import { setOutputWrapper } from "./src/cli";
 import { OutputWrapper } from "./src/out_stream";
 
+// In terminal 1: nc -l localhost 9090
+
 const wrapper = new OutputWrapper({ port: 9090 });
-await wrapper.start();
+await wrapper.start(); // connects to nc
 
 setOutputWrapper(wrapper);
 
-// Now all execMultipass() calls stream output to the connected client
+// Now all execMultipass() calls stream output to the nc listener
 // while still returning ExecResult normally
 ```
 
 When `setOutputWrapper(null)` is called, `cli.ts` reverts to its original buffered behavior.
 
-## nc Cross-Platform Note
+## Usage with VM.exec
 
-Since **we are the TCP server**, the `nc` cross-platform issue (`-l` vs `-l -p`) from `playground/nd.md` does **not** affect our code. The listener connects **to** us:
-
-```bash
-# Works identically on macOS AND Linux:
-nc <our-host> <our-port>
+```ts
+// Terminal 1: nc -l localhost 3333
+// Terminal 2:
+const result = await vm.exec("ls -al", 3333);
+// Output appears in the nc terminal in real-time
 ```
 
-The `-p` flag ambiguity only affects `nc` in **listen mode**, which we never use.
+## nc Cross-Platform Note
+
+Since `nc -l` behavior varies across platforms:
+
+- **macOS / BSD**: `nc -l localhost <port>` works directly
+- **Some Linux distros (OpenBSD netcat)**: May require `nc -l -p <port>` or `nc -l <port> <host>`
+
+The default hostname `"localhost"` resolves via the OS and matches the address family that `nc` binds to (IPv4 or IPv6).
 
 ## Key Behaviors
 
 | Scenario | Behavior |
 |---|---|
-| No client connected yet | Output buffered in memory |
-| Client connects | Buffered data flushed, live streaming begins |
-| Client disconnects | `client` reset to null, new output buffered again |
-| Second client tries to connect | Immediately rejected (connection closed) |
+| Listener not running | `start()` throws `ECONNREFUSED` |
+| Connected successfully | Output streamed in real-time to listener |
+| Listener disconnects mid-stream | `client` reset to null, subsequent writes are no-ops on TCP side |
 | `local: true` (default) | Output also printed to local stdout |
-| `local: false` | Output only sent to TCP client |
+| `local: false` | Output only sent to TCP listener |
+| Custom connect timeout | Set `STREAM_CONNECT_TIMEOUT` env var (ms, default 30000) |

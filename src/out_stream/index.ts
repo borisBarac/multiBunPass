@@ -8,17 +8,14 @@ import type {
 type InternalOptions = Required<OutputWrapperOptions>;
 
 export class OutputWrapper {
-	// biome-ignore lint/suspicious/noExplicitAny: Bun socket/server types lack convenient imports
-	private server: any = null;
-	// biome-ignore lint/suspicious/noExplicitAny: Bun socket/server types lack convenient imports
+	// biome-ignore lint/suspicious/noExplicitAny: Bun socket types lack convenient imports
 	private client: any = null;
 	private opts: InternalOptions;
-	private pendingData: Uint8Array[] = [];
 	private bytesSent = 0;
 
 	constructor(opts: OutputWrapperOptions) {
 		this.opts = {
-			host: "0.0.0.0",
+			host: "localhost",
 			local: true,
 			...opts,
 		};
@@ -27,31 +24,15 @@ export class OutputWrapper {
 	async start(): Promise<void> {
 		const handler = this;
 		try {
-			this.server = Bun.listen({
+			this.client = await Bun.connect({
 				hostname: this.opts.host,
 				port: this.opts.port,
 				socket: {
 					data() {},
-					open(socket) {
-						if (handler.client) {
-							log.warn("rejecting additional client connection");
-							socket.end();
-							return;
-						}
-						handler.client = socket;
-						log.info(
-							`OutputWrapper client connected from ${socket.remoteAddress}`,
-						);
-						for (const chunk of handler.pendingData) {
-							socket.write(chunk);
-						}
-						handler.pendingData = [];
-					},
-					close(socket) {
-						if (handler.client === socket) {
-							handler.client = null;
-							log.debug("OutputWrapper client disconnected");
-						}
+					open() {},
+					close() {
+						handler.client = null;
+						log.debug("OutputWrapper connection closed");
 					},
 					error(_socket, error) {
 						log.error(`OutputWrapper socket error: ${error}`);
@@ -59,10 +40,10 @@ export class OutputWrapper {
 				},
 			});
 			log.info(
-				`OutputWrapper listening on ${this.opts.host}:${this.opts.port}`,
+				`OutputWrapper connected to ${this.opts.host}:${this.opts.port}`,
 			);
 		} catch (err) {
-			log.error(`failed to start OutputWrapper: ${(err as Error).message}`);
+			log.error(`failed to connect OutputWrapper: ${(err as Error).message}`);
 			throw err;
 		}
 	}
@@ -76,8 +57,6 @@ export class OutputWrapper {
 		if (this.client) {
 			this.client.write(buf);
 			this.bytesSent += buf.byteLength;
-		} else {
-			this.pendingData.push(buf);
 		}
 	}
 
@@ -130,8 +109,7 @@ export class OutputWrapper {
 
 	status(): OutputWrapperStatus {
 		return {
-			listening: this.server !== null,
-			clientConnected: this.client !== null,
+			connected: this.client !== null,
 			host: this.opts.host,
 			port: this.opts.port,
 			bytesSent: this.bytesSent,
@@ -141,8 +119,6 @@ export class OutputWrapper {
 	async close(): Promise<void> {
 		log.debug(`OutputWrapper closed, ${this.bytesSent} bytes sent`);
 		this.client?.end();
-		this.server?.stop();
 		this.client = null;
-		this.server = null;
 	}
 }

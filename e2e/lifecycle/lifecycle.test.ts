@@ -141,8 +141,20 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 		await step(
 			"exec with stream: bun --version via OutputWrapper",
 			async () => {
+				const server = Bun.listen({
+					hostname: "localhost",
+					port: STREAM_PORT,
+					socket: {
+						data() {},
+						open() {},
+						close() {},
+						error() {},
+					},
+				});
+
 				const vm = client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
 				const result = await vm.exec("bun --version", STREAM_PORT);
+				server.stop();
 				expect(result.exitCode).toBe(0);
 				console.log(`    stdout: ${result.stdout.trim()}`);
 			},

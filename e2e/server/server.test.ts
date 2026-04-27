@@ -117,53 +117,26 @@ describe("E2E: Bun server in VM", () => {
 		await step(
 			"streaming: exec curl via OutputWrapper and verify TCP data",
 			async () => {
-				const execPromise = vm.exec(
+				let tcpData = "";
+				const server = Bun.listen({
+					hostname: "127.0.0.1",
+					port: STREAM_PORT,
+					socket: {
+						data(_socket, chunk) {
+							tcpData += Buffer.from(chunk).toString();
+						},
+						open() {},
+						close() {},
+						error() {},
+					},
+				});
+
+				const result = await vm.exec(
 					`curl -s http://localhost:${SERVER_PORT}/ && sleep 0.5`,
 					STREAM_PORT,
 				);
 
-				const tcpData = await new Promise<string>((resolve, reject) => {
-					const deadline = setTimeout(
-						() => reject(new Error("TCP connection timeout")),
-						15000,
-					);
-					let data = "";
-
-					const tryConnect = (attempt: number) => {
-						Bun.connect({
-							hostname: "127.0.0.1",
-							port: STREAM_PORT,
-							socket: {
-								data(_socket, chunk) {
-									data += Buffer.from(chunk).toString();
-								},
-								open() {},
-								close() {
-									clearTimeout(deadline);
-									resolve(data);
-								},
-								error(_socket, err) {
-									if (attempt < 100) {
-										setTimeout(() => tryConnect(attempt + 1), 30);
-									} else {
-										clearTimeout(deadline);
-										reject(err);
-									}
-								},
-							},
-						}).catch(() => {
-							if (attempt < 100) {
-								setTimeout(() => tryConnect(attempt + 1), 30);
-							} else {
-								clearTimeout(deadline);
-								reject(new Error("TCP connect failed after 100 retries"));
-							}
-						});
-					};
-					tryConnect(0);
-				});
-
-				const result = await execPromise;
+				server.stop();
 				expect(result.exitCode).toBe(0);
 				expect(result.stdout).toContain("Hello from MultiBunPass!");
 				expect(tcpData.length).toBeGreaterThan(0);

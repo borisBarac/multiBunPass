@@ -1,33 +1,14 @@
+import { basename } from "node:path";
 import { OutputWrapper } from "../out_stream";
 import { execMultipass, setOutputWrapper } from "./cli";
 import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
 import type { ExecResult } from "./types";
-import { basename } from "node:path";
 
 const DEFAULT_REMOTE_PATH = "~/app/";
 
 function resolvePath(path: string): string {
 	return path.startsWith("~/") ? `/home/ubuntu/${path.slice(2)}` : path;
-}
-
-async function isPortAvailable(port: number): Promise<boolean> {
-	try {
-		const server = Bun.listen({
-			hostname: "0.0.0.0",
-			port,
-			socket: {
-				data() {},
-				open() {},
-				close() {},
-				error() {},
-			},
-		});
-		server.stop();
-		return true;
-	} catch {
-		return false;
-	}
 }
 
 export class VM {
@@ -51,20 +32,21 @@ export class VM {
 			return this.execRaw(command);
 		}
 
-		const available = await isPortAvailable(streamPort);
-		if (!available) {
-			return {
-				stdout: "",
-				stderr: `Port ${streamPort} is already in use`,
-				exitCode: 1,
-			};
-		}
-
 		const wrapper = new OutputWrapper({ port: streamPort });
 		try {
 			await wrapper.start();
 			setOutputWrapper(wrapper);
 			return await this.execRaw(command);
+		} catch (err) {
+			const msg = (err as Error).message;
+			if (msg.toLowerCase().includes("connection refused")) {
+				return {
+					stdout: "",
+					stderr: `Connection refused on port ${streamPort} — is a listener running? (e.g. nc -l localhost ${streamPort})`,
+					exitCode: 1,
+				};
+			}
+			throw err;
 		} finally {
 			setOutputWrapper(null);
 			await wrapper.close();

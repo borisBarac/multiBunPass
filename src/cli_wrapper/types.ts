@@ -33,17 +33,16 @@ export type CreateVMOptions = {
 };
 
 export type OutputWrapperOptions = {
-	/** TCP port to listen on for external client connections (e.g. a dashboard or monitoring tool) */
+	/** TCP port to connect to on the remote listener (e.g. nc -l localhost 3333) */
 	port: number;
-	/** Hostname to bind the TCP server to. Defaults to "0.0.0.0" (all interfaces). Set to "127.0.0.1" for localhost only. */
+	/** Hostname to connect to. Defaults to "127.0.0.1". */
 	host?: string;
-	/** Whether to also print output to local stdout. Defaults to true. Set to false for headless/daemon usage. */
+	/** Whether to also print output to local stdout. Defaults to true. */
 	local?: boolean;
 };
 
 export type OutputWrapperStatus = {
-	listening: boolean;
-	clientConnected: boolean;
+	connected: boolean;
 	host: string;
 	port: number;
 	bytesSent: number;

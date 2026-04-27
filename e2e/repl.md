@@ -22,10 +22,18 @@ await client.init();
 
 ### With streaming (TCP output wrapper)
 
+First, start a TCP listener in a separate terminal:
+
+```bash
+nc -l localhost 19876
+```
+
+Then in the REPL:
+
 ```js
 const client = new MultiBunPassClient({ stream: { port: 19876 } });
 await client.init();
-client.status(); // { listening, clientConnected, host, port, bytesSent }
+// Command output is piped to the nc listener in real-time
 ```
 
 ## VM Lifecycle
