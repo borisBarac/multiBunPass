@@ -11,7 +11,7 @@ export async function createServer(): Promise<McpServer> {
 
 	registerLifecycleTools(server, client);
 	registerStateTools(server, client);
-	registerExecTool(server);
+	registerExecTool(server, client);
 	registerSyncTool(server, client);
 
 	return server;

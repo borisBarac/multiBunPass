@@ -14,7 +14,7 @@ export function registerStateTools(
 		},
 		async ({ name }) => {
 			try {
-				const vm = client.get(name, "");
+				const vm = await client.get(name, "");
 				await vm.start();
 				return {
 					content: [
@@ -41,7 +41,7 @@ export function registerStateTools(
 		},
 		async ({ name }) => {
 			try {
-				const vm = client.get(name, "");
+				const vm = await client.get(name, "");
 				await vm.stop();
 				return {
 					content: [
@@ -68,7 +68,7 @@ export function registerStateTools(
 		},
 		async ({ name }) => {
 			try {
-				const vm = client.get(name, "");
+				const vm = await client.get(name, "");
 				const running = await vm.isRunning();
 				return {
 					content: [

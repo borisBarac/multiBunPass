@@ -4,7 +4,7 @@ export const ListVMSchema = z.object({});
 
 export const CreateVMSchema = z.object({
 	name: z.string().describe("Name for the new VM"),
-	folderPath: z
+	localPath: z
 		.string()
 		.describe("Local project folder path to transfer into the VM"),
 	remotePath: z
@@ -35,7 +35,19 @@ export const StatusVMSchema = z.object({
 
 export const ExecVMSchema = z.object({
 	name: z.string().describe("Name of the VM to run the command in"),
-	command: z.string().describe("Shell command to execute inside the VM"),
+	command: z
+		.string()
+		.describe(
+			"Shell command to execute inside the VM (runs in the project directory by default)",
+		),
+	localPath: z
+		.string()
+		.optional()
+		.describe("Local project folder path (used to create VM handle)"),
+	remotePath: z
+		.string()
+		.optional()
+		.describe("Remote destination path inside the VM (default: ~/app/)"),
 	timeout: z
 		.number()
 		.default(60)
@@ -44,7 +56,7 @@ export const ExecVMSchema = z.object({
 
 export const SyncVMSchema = z.object({
 	name: z.string().describe("Name of the VM to sync code to"),
-	folderPath: z.string().describe("Local project folder path to transfer"),
+	localPath: z.string().describe("Local project folder path to transfer"),
 	remotePath: z
 		.string()
 		.optional()

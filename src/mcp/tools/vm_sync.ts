@@ -13,10 +13,10 @@ export function registerSyncTool(
 				"Re-transfer local project code to a running VM. Clears the remote directory first, then copies the local folder contents. The VM must already exist.",
 			inputSchema: SyncVMSchema,
 		},
-		async ({ name, folderPath, remotePath }) => {
+		async ({ name, localPath, remotePath }) => {
 			try {
-				const vm = client.get(name, folderPath, remotePath);
-				await vm.resync();
+				const vm = await client.get(name, localPath, remotePath);
+				await vm.pushFiles();
 				return {
 					content: [
 						{

@@ -11,29 +11,7 @@ bun repl
 
 ```js
 const { MultiBunPassClient } = require("./src/cli_wrapper");
-```
-
-### Without streaming
-
-```js
 const client = new MultiBunPassClient();
-await client.init();
-```
-
-### With streaming (TCP output wrapper)
-
-First, start a TCP listener in a separate terminal:
-
-```bash
-nc -l localhost 19876
-```
-
-Then in the REPL:
-
-```js
-const client = new MultiBunPassClient({ stream: { port: 19876 } });
-await client.init();
-// Command output is piped to the nc listener in real-time
 ```
 
 ## VM Lifecycle
@@ -55,10 +33,18 @@ const vms = await client.list();
 ### Get a handle to an existing VM
 
 ```js
-const vm = client.get("my-vm", "/path/to/local/folder", "~/app/");
+const vm = await client.get("my-vm", "/path/to/local/folder", "~/app/");
 ```
 
-This does not create anything — it just returns a `VM` object you can call methods on.
+This verifies the VM exists and the remote directory is present. Throws if either check fails.
+
+### Get a handle without checks
+
+```js
+const vm = client.getUnsafe("my-vm", "/path/to/local/folder");
+```
+
+Returns a `VM` instance immediately — no existence or directory checks. Use when you're certain the VM is ready (e.g. right after `create()`, or for start/stop/status operations).
 
 ### VM info
 
@@ -70,12 +56,14 @@ const info = await client.info("my-vm");
 ### Stop / Start
 
 ```js
-const vm = client.get("my-vm", "./my-app");
+const vm = client.getUnsafe("my-vm", "./my-app");
 await vm.stop();
 await vm.start();
 ```
 
 ## Running Commands
+
+`exec()` runs commands inside the VM's `remotePath` (`~/app/`) by default. A pre-flight check verifies the directory exists.
 
 ```js
 const result = await vm.exec("bun --version");
@@ -83,16 +71,45 @@ const result = await vm.exec("bun --version");
 ```
 
 ```js
-const result = await vm.exec("ls ~/app/");
-console.log(result.stdout);
+const result = await vm.exec("ls");
+// lists files in ~/app/ (the default working directory)
+```
+
+### Override the working directory
+
+```js
+const result = await vm.exec("ls /tmp", { cwd: "/tmp" });
+```
+
+### Skip the pre-flight directory check
+
+```js
+const result = await vm.exec("bun test", { skipPreflight: true });
+```
+
+Use `skipPreflight` when you're certain the directory exists — saves one multipass call.
+
+### Stream output over TCP
+
+Start a listener in a separate terminal:
+
+```bash
+nc -l localhost 19876
+```
+
+Then stream command output to it:
+
+```js
+const result = await vm.exec("bun test", { streamPort: 19876 });
+// output appears in the nc listener in real-time
 ```
 
 ## File Sync
 
-`resync()` clears the remote path and re-transfers the local folder:
+`pushFiles()` clears the remote directory and re-transfers the local folder:
 
 ```js
-await vm.resync();
+await vm.pushFiles();
 ```
 
 ## Check if VM is running
@@ -105,7 +122,6 @@ const running = await vm.isRunning();
 
 ```js
 await client.delete("my-vm"); // stops, deletes, and purges
-await client.close();          // shuts down streaming wrapper
 ```
 
 ## Reusing a VM across REPL sessions
@@ -117,12 +133,21 @@ const vms = await client.list();
 const existing = vms.find(v => v.name === "my-vm");
 
 if (existing) {
-  const vm = client.get("my-vm", "./my-app");
+  const vm = await client.get("my-vm", "./my-app");
   if (existing.state !== "Running") {
     await vm.start();
   }
-  await vm.resync(); // refresh files
+  await vm.pushFiles(); // refresh files
 } else {
   await client.create("my-vm", "./my-app");
 }
 ```
+
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `MBP_REMOTE_PATH` | `~/app/` | Default remote path for VMs |
+| `MBP_LOG_LEVEL` | `info` | Log level (`debug`, `info`, `warn`, `error`) |
+| `MBP_STREAM_HOST` | `127.0.0.1` | Default hostname for OutputWrapper |
+| `MBP_STREAM_CONNECT_TIMEOUT` | `30000` | TCP connect timeout in ms |
