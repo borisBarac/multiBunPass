@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync } from "node:fs";
-import { copyFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MultiBunPassClient } from "../../src/cli_wrapper";
@@ -22,7 +21,7 @@ const FIXTURE_PATH = join(import.meta.dir, "fixtures", "server.ts");
 
 let client: MultiBunPassClient;
 let tmpDir: string;
-let vm: ReturnType<MultiBunPassClient["get"]>;
+let vm: Awaited<ReturnType<MultiBunPassClient["get"]>>;
 
 describe("E2E: Bun server in VM", () => {
 	beforeAll(() => {
@@ -64,7 +63,7 @@ describe("E2E: Bun server in VM", () => {
 		});
 
 		await step("verify server.ts exists on VM", async () => {
-			const result = await vm.exec("ls ~/app/server.ts");
+			const result = await vm.exec("ls server.ts");
 			expect(result.exitCode).toBe(0);
 			expect(result.stdout.trim()).toContain("server.ts");
 			console.log(`    found: ${result.stdout.trim()}`);
@@ -72,7 +71,7 @@ describe("E2E: Bun server in VM", () => {
 
 		await step("start Bun server in background", async () => {
 			const result = await vm.exec(
-				`nohup bun run ~/app/server.ts > /tmp/server.log 2>&1 & echo $!`,
+				`nohup bun run server.ts > /tmp/server.log 2>&1 & echo $!`,
 			);
 			expect(result.exitCode).toBe(0);
 			console.log(`    pid: ${result.stdout.trim()}`);
@@ -133,13 +132,13 @@ describe("E2E: Bun server in VM", () => {
 
 				const result = await vm.exec(
 					`curl -s http://localhost:${SERVER_PORT}/ && sleep 0.5`,
-					STREAM_PORT,
+					{ streamPort: STREAM_PORT },
 				);
 
 				server.stop();
 				expect(result.exitCode).toBe(0);
 				expect(result.stdout).toContain("Hello from MultiBunPass!");
-				expect(tcpData.length).toBeGreaterThan(0);
+				expect(tcpData).toContain("Hello from MultiBunPass!");
 				console.log(`    TCP received ${tcpData.length} bytes`);
 				console.log(`    exec stdout: "${result.stdout.trim()}"`);
 			},

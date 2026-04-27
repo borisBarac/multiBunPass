@@ -42,25 +42,55 @@ beforeEach(() => {
 describe("VM", () => {
 	const vm = new VM("testvm", "/host/path", "~/app/");
 
-	test("getLocalPath returns remotePath", () => {
-		expect(vm.getLocalPath()).toBe("~/app/");
-	});
-
-	test("getLocalPath uses default when no remotePath provided", () => {
+	test("remotePath defaults to ~/app/ when not provided", () => {
 		const vmDefault = new VM("testvm", "/host/path");
-		expect(vmDefault.getLocalPath()).toBe("~/app/");
+		expect(vmDefault.remotePath).toBe("~/app/");
 	});
 
-	test("exec calls multipass with bash -lc", async () => {
+	test("exec pre-flights cwd check and runs command with cd", async () => {
 		await vm.exec("node app.js");
+		expect(calls).toHaveLength(2);
 		expect(calls[0]).toEqual([
 			"exec",
 			"testvm",
 			"--",
 			"bash",
 			"-lc",
-			"node app.js",
+			"test -d '/home/ubuntu/app/'",
 		]);
+		expect(calls[1]).toEqual([
+			"exec",
+			"testvm",
+			"--",
+			"bash",
+			"-lc",
+			"cd '/home/ubuntu/app/' && node app.js",
+		]);
+	});
+
+	test("exec with custom cwd", async () => {
+		await vm.exec("ls", { cwd: "/tmp" });
+		expect(calls[1]).toEqual([
+			"exec",
+			"testvm",
+			"--",
+			"bash",
+			"-lc",
+			"cd '/tmp' && ls",
+		]);
+	});
+
+	test("exec returns error when cwd does not exist", async () => {
+		const { execMultipass } = require("./cli");
+		execMultipass.mockImplementationOnce(async (args: string[]) => {
+			calls.push(args);
+			throw new Error("multipass exec failed (exit 1)");
+		});
+
+		const result = await vm.exec("node app.js", { cwd: "/nonexistent" });
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr).toContain("does not exist");
+		expect(result.stderr).toContain("pushFiles()");
 	});
 
 	test("stop calls multipass stop", async () => {
@@ -73,22 +103,30 @@ describe("VM", () => {
 		expect(calls[0]).toEqual(["start", "testvm"]);
 	});
 
-	test("resync calls rm then transfer in sequence", async () => {
-		await vm.resync();
-		expect(calls).toHaveLength(2);
+	test("pushFiles calls rm then transfer then flatten", async () => {
+		await vm.pushFiles();
+		expect(calls).toHaveLength(3);
 		expect(calls[0]).toEqual([
 			"exec",
 			"testvm",
 			"--",
 			"bash",
 			"-c",
-			"rm -rf ~/app/*",
+			"rm -rf '/home/ubuntu/app/'*",
 		]);
 		expect(calls[1]).toEqual([
 			"transfer",
 			"--recursive",
 			"/host/path",
-			"testvm:~/app/",
+			"testvm:/home/ubuntu/app/",
+		]);
+		expect(calls[2]).toEqual([
+			"exec",
+			"testvm",
+			"--",
+			"bash",
+			"-lc",
+			"shopt -s dotglob && mv '/home/ubuntu/app/path'/* '/home/ubuntu/app/' && rmdir '/home/ubuntu/app/path'",
 		]);
 	});
 

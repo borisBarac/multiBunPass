@@ -85,7 +85,7 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 		});
 
 		{
-			const vm = client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
+			const vm = await client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
 
 			await step("exec: bun --version", async () => {
 				const result = await vm.exec("bun --version");
@@ -95,7 +95,7 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 			});
 
 			await step("exec: verify transferred files exist", async () => {
-				const result = await vm.exec("ls ~/app/");
+				const result = await vm.exec("ls");
 				expect(result.exitCode).toBe(0);
 				expect(result.stdout).toContain("index.ts");
 				expect(result.stdout).toContain("package.json");
@@ -104,13 +104,13 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 			});
 
 			await step("exec: verify file content", async () => {
-				const result = await vm.exec("cat ~/app/hello.txt");
+				const result = await vm.exec("cat hello.txt");
 				expect(result.exitCode).toBe(0);
 				expect(result.stdout).toContain("initial content");
 			});
 
-			await step("getLocalPath returns correct remote path", async () => {
-				expect(vm.getLocalPath()).toBe(E2E_REMOTE_PATH);
+			await step("remotePath is accessible on the VM instance", async () => {
+				expect(vm.remotePath).toBe(E2E_REMOTE_PATH);
 			});
 
 			await step("stop VM", async () => {
@@ -123,16 +123,16 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 				expect(result.exitCode).toBe(0);
 			});
 
-			await step("resync: modify local file and re-transfer", async () => {
+			await step("pushFiles: modify local file and re-transfer", async () => {
 				writeFileSync(join(tmpDir, "hello.txt"), "updated content\n");
 				writeFileSync(join(tmpDir, "new-file.txt"), "I am new\n");
 
-				await vm.resync();
+				await vm.pushFiles();
 
-				const catResult = await vm.exec("cat ~/app/hello.txt");
+				const catResult = await vm.exec("cat hello.txt");
 				expect(catResult.stdout).toContain("updated content");
 
-				const lsResult = await vm.exec("cat ~/app/new-file.txt");
+				const lsResult = await vm.exec("cat new-file.txt");
 				expect(lsResult.stdout).toContain("I am new");
 				console.log(`    hello.txt now: "${catResult.stdout.trim()}"`);
 			});
@@ -152,8 +152,10 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 					},
 				});
 
-				const vm = client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
-				const result = await vm.exec("bun --version", STREAM_PORT);
+				const vm = await client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
+				const result = await vm.exec("bun --version", {
+					streamPort: STREAM_PORT,
+				});
 				server.stop();
 				expect(result.exitCode).toBe(0);
 				console.log(`    stdout: ${result.stdout.trim()}`);

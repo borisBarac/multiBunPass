@@ -90,14 +90,14 @@ export async function setupVM(
 
 	if (existing) {
 		console.log(`    VM "${vmName}" already exists (state=${existing.state})`);
-		const vm = client.get(vmName, tmpDir, remotePath);
+		const vm = await client.get(vmName, tmpDir, remotePath);
 		if (existing.state !== "Running") {
 			await vm.start();
 		}
-		await vm.resync();
+		await vm.pushFiles();
 	} else {
 		console.log(`    VM "${vmName}" not found, creating...`);
 		await client.create(vmName, tmpDir, remotePath);
 	}
-	return client.get(vmName, tmpDir, remotePath);
+	return client.getUnsafe(vmName, tmpDir, remotePath);
 }

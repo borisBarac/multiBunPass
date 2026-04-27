@@ -22,6 +22,13 @@ mock.module("./cli", () => ({
 							image: "24.04",
 							release: "24.04",
 						},
+						{
+							name: "myvm",
+							state: "Running",
+							ipv4: ["192.168.1.6"],
+							image: "24.04",
+							release: "24.04",
+						},
 					],
 				}),
 				stderr: "",
@@ -73,7 +80,7 @@ describe("MultiBunPassClient", () => {
 
 	test("list parses JSON and returns VMInfo array", async () => {
 		const vms = await client.list();
-		expect(vms).toHaveLength(1);
+		expect(vms).toHaveLength(2);
 		expect(vms[0].name).toBe("vm1");
 		expect(vms[0].state).toBe("Running");
 		expect(vms[0].ipv4).toEqual(["192.168.1.5"]);
@@ -86,21 +93,73 @@ describe("MultiBunPassClient", () => {
 		expect(calls[1]).toEqual(["purge"]);
 	});
 
-	test("get returns VM instance without CLI calls", () => {
-		const vm = client.get("myvm", "/host/folder");
+	test("get verifies VM exists and remote dir, returns VM", async () => {
+		const vm = await client.get("myvm", "/host/folder");
 		expect(vm).toBeInstanceOf(VM);
 		expect(vm.name).toBe("myvm");
-		expect(vm.folderPath).toBe("/host/folder");
-		expect(vm.getLocalPath()).toBe("~/app/");
+		expect(vm.localPath).toBe("/host/folder");
+		expect(vm.remotePath).toBe("~/app/");
+
+		const listCall = calls.find((c) => c[0] === "list");
+		expect(listCall).toBeDefined();
+
+		const testDirCall = calls.find(
+			(c) => c[0] === "exec" && c.includes("test"),
+		);
+		expect(testDirCall).toBeDefined();
+	});
+
+	test("get throws if VM not found", async () => {
+		expect(client.get("nonexistent", "/host/folder")).rejects.toThrow(
+			'VM "nonexistent" not found',
+		);
+	});
+
+	test("get throws if remote directory missing", async () => {
+		const { execMultipass } = require("./cli");
+		execMultipass.mockImplementationOnce(async (args: string[]) => {
+			calls.push(args);
+			return {
+				stdout: JSON.stringify({
+					list: [
+						{
+							name: "myvm",
+							state: "Running",
+							ipv4: [],
+							image: "",
+							release: "",
+						},
+					],
+				}),
+				stderr: "",
+				exitCode: 0,
+			} as ExecResult;
+		});
+		execMultipass.mockImplementationOnce(async (args: string[]) => {
+			calls.push(args);
+			throw new Error("multipass exec failed (exit 1)");
+		});
+
+		expect(client.get("myvm", "/host/folder")).rejects.toThrow(
+			"does not exist",
+		);
+	});
+
+	test("getUnsafe returns VM without any CLI calls", () => {
+		const vm = client.getUnsafe("myvm", "/host/folder");
+		expect(vm).toBeInstanceOf(VM);
+		expect(vm.name).toBe("myvm");
+		expect(vm.localPath).toBe("/host/folder");
+		expect(vm.remotePath).toBe("~/app/");
 		expect(calls).toHaveLength(0);
 	});
 
-	test("get respects custom remotePath", () => {
-		const vm = client.get("myvm", "/host/folder", "~/custom/");
-		expect(vm.getLocalPath()).toBe("~/custom/");
+	test("getUnsafe respects custom remotePath", () => {
+		const vm = client.getUnsafe("myvm", "/host/folder", "~/custom/");
+		expect(vm.remotePath).toBe("~/custom/");
 	});
 
-	test("create runs launch → cloud-init wait → transfer", async () => {
+	test("create runs launch → cloud-init wait → transfer → verify", async () => {
 		const vm = await client.create("newvm", "/my/project");
 		expect(vm).toBeInstanceOf(VM);
 		expect(vm.name).toBe("newvm");
@@ -118,14 +177,14 @@ describe("MultiBunPassClient", () => {
 			"transfer",
 			"--recursive",
 			"/my/project",
-			"newvm:~/app/",
+			"newvm:/home/ubuntu/app/",
 		]);
 	});
 
 	test("create uses custom remotePath", async () => {
 		const _vm = await client.create("newvm", "/my/project", "~/src/");
 		const transferCall = calls.find((c) => c[0] === "transfer");
-		expect(transferCall).toContain("newvm:~/src/");
+		expect(transferCall).toContain("newvm:/home/ubuntu/src/");
 	});
 
 	test("info returns parsed VMDetailedInfo", async () => {
