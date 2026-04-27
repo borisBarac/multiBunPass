@@ -22,23 +22,34 @@ export class OutputWrapper {
 	}
 
 	async start(): Promise<void> {
+		const rawTimeout = Number(Bun.env.MBP_STREAM_CONNECT_TIMEOUT);
+		const timeoutMs =
+			Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : 30000;
+
 		const handler = this;
 		try {
-			this.client = await Bun.connect({
-				hostname: this.opts.host,
-				port: this.opts.port,
-				socket: {
-					data() {},
-					open() {},
-					close() {
-						handler.client = null;
-						log.debug("OutputWrapper connection closed");
+			this.client = await Promise.race([
+				Bun.connect({
+					hostname: this.opts.host,
+					port: this.opts.port,
+					socket: {
+						data() {},
+						open() {},
+						close() {
+							handler.client = null;
+							log.debug("OutputWrapper connection closed");
+						},
+						error(_socket, error) {
+							log.error(`OutputWrapper socket error: ${error}`);
+						},
 					},
-					error(_socket, error) {
-						log.error(`OutputWrapper socket error: ${error}`);
-					},
-				},
-			});
+				}),
+				Bun.sleep(timeoutMs).then(() => {
+					throw new Error(
+						`OutputWrapper connection to ${this.opts.host}:${this.opts.port} timed out after ${timeoutMs}ms`,
+					);
+				}),
+			]);
 			log.info(
 				`OutputWrapper connected to ${this.opts.host}:${this.opts.port}`,
 			);
