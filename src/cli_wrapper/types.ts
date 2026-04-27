@@ -28,8 +28,17 @@ export type VMDetailedInfo = {
 
 export type CreateVMOptions = {
 	name: string;
-	folderPath: string;
+	localPath: string;
 	remotePath?: string;
+};
+
+export type ExecOptions = {
+	/** TCP port to stream output to via OutputWrapper. */
+	streamPort?: number;
+	/** Working directory inside the VM. Defaults to VM's remotePath. Must already exist. */
+	cwd?: string;
+	/** Skip the pre-flight directory check. Use when you're certain the cwd exists (e.g. right after pushFiles). */
+	skipPreflight?: boolean;
 };
 
 export type OutputWrapperOptions = {

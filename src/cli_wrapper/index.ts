@@ -3,6 +3,7 @@ export { MultiBunPassClient } from "./client";
 export { BUN_CLOUD_CONFIG, writeCloudConfigTempFile } from "./cloud-config";
 export type {
 	CreateVMOptions,
+	ExecOptions,
 	ExecResult,
 	OutputWrapperOptions,
 	OutputWrapperStatus,
