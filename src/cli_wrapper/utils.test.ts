@@ -23,9 +23,7 @@ describe("shellEscape", () => {
 	});
 
 	test("handles paths with spaces (no escaping needed)", () => {
-		expect(shellEscape("/path/with spaces/app")).toBe(
-			"/path/with spaces/app",
-		);
+		expect(shellEscape("/path/with spaces/app")).toBe("/path/with spaces/app");
 	});
 });
 

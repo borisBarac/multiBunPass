@@ -1,6 +1,12 @@
 export { execMultipass } from "./cli";
 export { MultiBunPassClient } from "./client";
-export { BUN_CLOUD_CONFIG, writeCloudConfigTempFile } from "./cloud-config";
+export {
+	BUN_CLOUD_CONFIG,
+	cleanupCloudConfigTempFile,
+	DEFAULT_CLOUD_CONFIG,
+	resolveCloudConfig,
+	writeCloudConfigTempFile,
+} from "./cloud-config";
 export type {
 	CreateVMOptions,
 	ExecOptions,
