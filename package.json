@@ -14,7 +14,8 @@
 		"typecheck": "tsc --noEmit",
 		"test": "bun test src/",
 		"test-e2e": "bun test e2e/",
-		"test:watch": "bun test --watch src/"
+		"test:watch": "bun test --watch src/",
+		"cleanup": "bun src/scripts/cleanup-all.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.12",
