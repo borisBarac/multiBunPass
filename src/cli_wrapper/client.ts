@@ -170,6 +170,35 @@ export class MultiBunPassClient {
 	}
 
 	/**
+	 * Check whether a VM with the given name exists.
+	 * Uses the JSON-based `list()` output for reliability.
+	 *
+	 * @param name - VM name.
+	 * @returns `true` if the VM exists, `false` otherwise.
+	 */
+	async exists(name: string): Promise<boolean> {
+		const vms = await this.list();
+		return vms.some((v) => v.name === name);
+	}
+
+	/**
+	 * Get the running status of a VM.
+	 * Uses the JSON-based `list()` output for reliability.
+	 *
+	 * @param name - VM name.
+	 * @returns An object with a `running` boolean.
+	 * @throws If the VM is not found.
+	 */
+	async getStatus(name: string): Promise<{ running: boolean }> {
+		const vms = await this.list();
+		const vm = vms.find((v) => v.name === name);
+		if (!vm) {
+			throw new Error(`VM "${name}" not found.`);
+		}
+		return { running: vm.state === "Running" };
+	}
+
+	/**
 	 * Get a VM instance without any pre-flight checks.
 	 * Use when you're certain the VM and remote directory are ready (e.g. right after `create()`).
 	 *
