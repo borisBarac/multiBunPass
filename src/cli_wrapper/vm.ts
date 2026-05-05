@@ -4,7 +4,7 @@ import { execMultipass, setOutputWrapper } from "./cli";
 import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
 import type { ExecOptions, ExecResult } from "./types";
-import { expandTilde, getDefaultRemotePath } from "./utils";
+import { expandTilde, getDefaultRemotePath, shellEscape } from "./utils";
 
 export class VM {
 	/** Multipass VM name. */
@@ -48,7 +48,7 @@ export class VM {
 
 		if (!options?.skipPreflight) {
 			try {
-				await this.runMultipassExec(`test -d '${cwd}'`);
+				await this.runMultipassExec(`test -d '${shellEscape(cwd)}'`);
 			} catch {
 				return {
 					stdout: "",
@@ -58,7 +58,7 @@ export class VM {
 			}
 		}
 
-		const fullCommand = `cd '${cwd}' && ${command}`;
+		const fullCommand = `cd '${shellEscape(cwd)}' && ${command}`;
 
 		if (options?.streamPort === undefined) {
 			return this.runMultipassExec(fullCommand);
@@ -134,20 +134,22 @@ export class VM {
 	 */
 	async pushFiles(): Promise<ExecResult> {
 		const resolvedDest = expandTilde(this.remotePath);
-		log.info(`pushFiles: clearing ${resolvedDest} on ${this.name}`);
-		try {
-			await execMultipass([
-				"exec",
-				this.name,
-				"--",
-				"bash",
-				"-c",
-				`rm -rf '${resolvedDest}'*`,
-			]);
-		} catch (err) {
-			log.warn(
-				`pushFiles: failed to clear remote path on ${this.name}: ${(err as Error).message}`,
-			);
+		if (resolvedDest && resolvedDest !== "/") {
+			log.info(`pushFiles: clearing ${resolvedDest} on ${this.name}`);
+			try {
+				await execMultipass([
+					"exec",
+					this.name,
+					"--",
+					"bash",
+					"-c",
+					`rm -rf '${shellEscape(resolvedDest)}'*`,
+				]);
+			} catch (err) {
+				log.warn(
+					`pushFiles: failed to clear remote path on ${this.name}: ${(err as Error).message}`,
+				);
+			}
 		}
 		const result = await execMultipass([
 			"transfer",
@@ -166,7 +168,7 @@ export class VM {
 			"--",
 			"bash",
 			"-lc",
-			`shopt -s dotglob && mv '${resolvedDest}${folderName}'/* '${resolvedDest}' && rmdir '${resolvedDest}${folderName}'`,
+			`shopt -s dotglob && mv '${shellEscape(resolvedDest)}${shellEscape(folderName)}'/* '${shellEscape(resolvedDest)}' && rmdir '${shellEscape(resolvedDest)}${shellEscape(folderName)}'`,
 		]);
 
 		return result;

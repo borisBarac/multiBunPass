@@ -17,10 +17,19 @@ runcmd:
   - /home/ubuntu/.bun/bin/bun --version > /home/ubuntu/bun_version.txt
 `;
 
-export function writeCloudConfigTempFile(): string {
+export async function writeCloudConfigTempFile(): Promise<string> {
 	const tmpDir = Bun.env.TMPDIR || "/tmp";
 	const path = `${tmpDir}/multibunpass-cloud-config.yaml`;
 	log.debug(`writing cloud-config to ${path}`);
-	Bun.write(path, BUN_CLOUD_CONFIG);
+	await Bun.write(path, BUN_CLOUD_CONFIG);
 	return path;
+}
+
+export async function cleanupCloudConfigTempFile(path: string): Promise<void> {
+	try {
+		await Bun.file(path).unlink();
+		log.debug(`cleaned up cloud-config temp file ${path}`);
+	} catch {
+		// ignore — temp file cleanup is best-effort
+	}
 }

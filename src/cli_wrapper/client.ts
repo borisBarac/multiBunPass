@@ -1,10 +1,14 @@
 import { basename } from "node:path";
 import { execMultipass } from "./cli";
-import { writeCloudConfigTempFile } from "./cloud-config";
+import {
+	cleanupCloudConfigTempFile,
+	writeCloudConfigTempFile,
+} from "./cloud-config";
+import { waitForCloudInit } from "./cloud-init";
 import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
 import type { ExecResult, VMInfo } from "./types";
-import { expandTilde, getDefaultRemotePath } from "./utils";
+import { expandTilde, getDefaultRemotePath, shellEscape } from "./utils";
 import { VM } from "./vm";
 
 export class MultiBunPassClient {
@@ -41,20 +45,33 @@ export class MultiBunPassClient {
 		const dest = remotePath || getDefaultRemotePath();
 		log.info(`creating VM "${name}" from ${localPath}`);
 
-		const configPath = writeCloudConfigTempFile();
+		const configPath = await writeCloudConfigTempFile();
 
-		await execMultipass([
-			"launch",
-			"lts",
-			"--name",
-			name,
-			"--bridged",
-			"--cloud-init",
-			configPath,
-		]);
+		try {
+			await execMultipass([
+				"launch",
+				"lts",
+				"--name",
+				name,
+				"--bridged",
+				"--cloud-init",
+				configPath,
+			]);
+		} catch (err) {
+			log.warn(`launch failed, cleaning up VM "${name}"`);
+			try {
+				await execMultipass(["delete", name]);
+				await execMultipass(["purge"]);
+			} catch {
+				// best-effort cleanup
+			}
+			throw err;
+		} finally {
+			await cleanupCloudConfigTempFile(configPath);
+		}
 
 		log.info(`VM "${name}" launched, waiting for cloud-init`);
-		await this.waitForCloudInit(name);
+		await waitForCloudInit(name);
 
 		const resolvedDest = expandTilde(dest);
 		log.debug(`creating remote directory ${resolvedDest} on ${name}`);
@@ -69,14 +86,24 @@ export class MultiBunPassClient {
 		]);
 
 		const folderName = basename(localPath.replace(/\/+$/, ""));
-		log.debug(`flattening ${resolvedDest}${folderName}/ → ${resolvedDest}`);
+		const subfolderPath = `${resolvedDest}${folderName}`;
+
+		try {
+			await execMultipass(["exec", name, "--", "test", "-d", subfolderPath]);
+		} catch {
+			throw new Error(
+				`Expected subfolder "${subfolderPath}" not found in VM "${name}" after transfer. The local path may not match the expected structure.`,
+			);
+		}
+
+		log.debug(`flattening ${subfolderPath}/ → ${resolvedDest}`);
 		await execMultipass([
 			"exec",
 			name,
 			"--",
 			"bash",
 			"-lc",
-			`shopt -s dotglob && mv '${resolvedDest}${folderName}'/* '${resolvedDest}' && rmdir '${resolvedDest}${folderName}'`,
+			`shopt -s dotglob && mv '${shellEscape(resolvedDest)}${shellEscape(folderName)}'/* '${shellEscape(resolvedDest)}' && rmdir '${shellEscape(resolvedDest)}${shellEscape(folderName)}'`,
 		]);
 
 		log.info(`verifying remote directory ${resolvedDest} on ${name}`);
@@ -153,35 +180,5 @@ export class MultiBunPassClient {
 	 */
 	getUnsafe(name: string, localPath: string, remotePath?: string): VM {
 		return new VM(name, localPath, remotePath);
-	}
-
-	private async waitForCloudInit(name: string): Promise<void> {
-		const maxAttempts = 30;
-		const delayMs = 2000;
-
-		for (let i = 0; i < maxAttempts; i++) {
-			try {
-				const result = await execMultipass([
-					"exec",
-					name,
-					"--",
-					"bash",
-					"-c",
-					"cloud-init status --wait 2>/dev/null && echo DONE",
-				]);
-				if (result.stdout.includes("DONE")) {
-					return;
-				}
-			} catch (err) {
-				log.warn(
-					`cloud-init check failed on attempt ${i + 1}/${maxAttempts} for "${name}": ${(err as Error).message}`,
-				);
-			}
-			await Bun.sleep(delayMs);
-		}
-
-		throw new Error(
-			`cloud-init did not complete for ${name} after ${maxAttempts} attempts`,
-		);
 	}
 }

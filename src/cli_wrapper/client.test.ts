@@ -4,8 +4,13 @@ import type { ExecResult } from "./types";
 const calls: string[][] = [];
 
 mock.module("./cloud-config", () => ({
-	writeCloudConfigTempFile: () => "/tmp/multibunpass-cloud-config.yaml",
+	writeCloudConfigTempFile: async () => "/tmp/multibunpass-cloud-config.yaml",
+	cleanupCloudConfigTempFile: async () => {},
 	BUN_CLOUD_CONFIG: "",
+}));
+
+mock.module("./cloud-init", () => ({
+	waitForCloudInit: async () => {},
 }));
 
 mock.module("./cli", () => ({
