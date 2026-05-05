@@ -11,7 +11,7 @@ import {
 	step,
 } from "../helpers";
 
-const VM_NAME = Bun.env.E2E_VM_NAME || `mbp-e2e-${Date.now()}`;
+const VM_NAME = Bun.env.E2E_VM_NAME || "mbp-e2e-lifecycle";
 const CLEANUP = Bun.env.E2E_CLEANUP === "true";
 const STREAM_PORT = Number(Bun.env.E2E_STREAM_PORT) || 19876;
 const E2E_REMOTE_PATH = "~/app/";

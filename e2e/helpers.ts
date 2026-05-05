@@ -1,4 +1,6 @@
+import { execMultipass } from "../src/cli_wrapper/cli";
 import type { MultiBunPassClient } from "../src/cli_wrapper";
+import { expandTilde } from "../src/cli_wrapper/utils";
 
 export interface StepResult {
 	step: string;
@@ -88,16 +90,19 @@ export async function setupVM(
 	const vms = await client.list();
 	const existing = vms.find((v) => v.name === vmName);
 
-	if (existing) {
-		console.log(`    VM "${vmName}" already exists (state=${existing.state})`);
-		const vm = await client.get(vmName, tmpDir, remotePath);
-		if (existing.state !== "Running") {
-			await vm.start();
-		}
-		await vm.pushFiles();
-	} else {
-		console.log(`    VM "${vmName}" not found, creating...`);
-		await client.create(vmName, tmpDir, remotePath);
+	if (!existing) {
+		throw new Error(
+			`VM "${vmName}" not found. Run "bun run e2e:setup" first to create preloaded test VMs.`,
+		);
 	}
-	return client.getUnsafe(vmName, tmpDir, remotePath);
+
+	console.log(`    VM "${vmName}" already exists (state=${existing.state})`);
+	const vm = client.getUnsafe(vmName, tmpDir, remotePath);
+	if (existing.state !== "Running") {
+		await vm.start();
+	}
+	const resolvedDest = expandTilde(remotePath);
+	await execMultipass(["exec", vmName, "--", "mkdir", "-p", resolvedDest]);
+	await vm.pushFiles();
+	return vm;
 }

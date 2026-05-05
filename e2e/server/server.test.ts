@@ -11,7 +11,7 @@ import {
 	step,
 } from "../helpers";
 
-const VM_NAME = Bun.env.E2E_VM_NAME || `mbp-server-${Date.now()}`;
+const VM_NAME = Bun.env.E2E_VM_NAME || "mbp-e2e-server";
 const CLEANUP = Bun.env.E2E_CLEANUP === "true";
 const STREAM_PORT = Number(Bun.env.E2E_STREAM_PORT) || 19876;
 const SERVER_PORT = 3000;
