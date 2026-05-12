@@ -1,6 +1,6 @@
 {
-	"name": "multibunpass",
-	"version": "0.1.0",
+	"name": "@boris.barac/multibunpass",
+	"version": "0.1.1",
 	"description": "Multipass is great, but the friction is real. MultiBunPass makes Multipass effortless — get isolated, Bun-preinstalled Ubuntu VMs in seconds, designed for rapid development sessions and AI workflows.",
 	"author": "Boris Barac (https://www.npmjs.com/~boris.barac)",
 	"license": "MIT",
@@ -34,8 +34,13 @@
 	"files": [
 		"index.ts",
 		"src/",
-		"README.md"
+		"README.md",
+		"LICENSE"
 	],
+	"publishConfig": {
+		"registry": "https://registry.npmjs.org",
+		"access": "public"
+	},
 	"type": "module",
 	"scripts": {
 		"lint": "biome check .",

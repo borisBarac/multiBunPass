@@ -26,7 +26,21 @@
 ### Install
 
 ```bash
-bun install
+bun add @boris.barac/multibunpass
+```
+
+For CLI and MCP server (global install):
+
+```bash
+bun add -g @boris.barac/multibunpass
+```
+
+Or run without installing via `bunx`:
+
+```bash
+bunx @boris.barac/multibunpass mbp list
+bunx @boris.barac/multibunpass mbp create my-app --local-path ./my-project
+bunx @boris.barac/multibunpass mbp exec my-app --local-path ./my-project -- command you want to execute
 ```
 
 ### Create a VM and run your code
@@ -79,7 +93,7 @@ Every command supports `--json` for machine-readable output.
 Use MultiBunPass as a library in your own tools:
 
 ```ts
-import { MultiBunPassClient } from "./cli_wrapper";
+import { MultiBunPassClient } from "@boris.barac/multibunpass";
 
 const client = new MultiBunPassClient();
 
