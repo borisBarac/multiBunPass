@@ -4,8 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MultiBunPassClient } from "../src/cli_wrapper";
 import { execMultipass } from "../src/cli_wrapper/cli";
+import { VM_LIFECYCLE, VM_SERVER } from "./helpers";
 
-const E2E_VMS = [{ name: "mbp-e2e-lifecycle" }, { name: "mbp-e2e-server" }];
+const E2E_VMS = [{ name: VM_LIFECYCLE }, { name: VM_SERVER }];
 
 async function main() {
 	const client = new MultiBunPassClient();
@@ -40,9 +41,7 @@ async function main() {
 				continue;
 			}
 
-			console.log(
-				`  bun not found, recreating with default cloud-config...`,
-			);
+			console.log(`  bun not found, recreating with default cloud-config...`);
 			await client.delete(name);
 		}
 

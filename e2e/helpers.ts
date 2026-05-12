@@ -1,6 +1,9 @@
-import { execMultipass } from "../src/cli_wrapper/cli";
 import type { MultiBunPassClient } from "../src/cli_wrapper";
+import { execMultipass } from "../src/cli_wrapper/cli";
 import { expandTilde } from "../src/cli_wrapper/utils";
+
+export const VM_LIFECYCLE = "mbp-e2e-lifecycle";
+export const VM_SERVER = "mbp-e2e-server";
 
 export interface StepResult {
 	step: string;

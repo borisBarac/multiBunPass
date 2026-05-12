@@ -10,7 +10,7 @@ bun repl
 ## Setup
 
 ```js
-const { MultiBunPassClient } = require("./src/cli_wrapper");
+import { MultiBunPassClient } from "./src/cli_wrapper";
 const client = new MultiBunPassClient();
 ```
 
