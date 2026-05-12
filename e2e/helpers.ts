@@ -18,12 +18,12 @@ export async function step(
 ): Promise<void>;
 export async function step(
 	name: string,
-	opts: { critical?: boolean },
+	opts: { critical?: boolean; timeout?: number },
 	fn: () => Promise<void>,
 ): Promise<void>;
 export async function step(
 	name: string,
-	opts?: { critical?: boolean } | (() => Promise<void>),
+	opts?: { critical?: boolean; timeout?: number } | (() => Promise<void>),
 	fn?: () => Promise<void>,
 ) {
 	if (!fn) {
@@ -32,8 +32,21 @@ export async function step(
 	}
 	const start = performance.now();
 	const results = getResults();
+	const stepTimeout =
+		opts && typeof opts === "object" ? opts.timeout : undefined;
 	try {
-		await fn();
+		if (stepTimeout) {
+			await Promise.race([
+				fn(),
+				Bun.sleep(stepTimeout).then(() => {
+					throw new Error(
+						`step "${name}" timed out after ${stepTimeout}ms`,
+					);
+				}),
+			]);
+		} else {
+			await fn();
+		}
 		const ms = Math.round(performance.now() - start);
 		results.push({ step: name, ok: true, ms });
 		console.log(`  ✓ ${name} (${ms}ms)`);

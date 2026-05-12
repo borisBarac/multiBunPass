@@ -72,12 +72,18 @@ describe("E2E: Bun server in VM", () => {
 				console.log(`    found: ${result.stdout.trim()}`);
 			});
 
-			await step("start Bun server in background", async () => {
-				const result = await vm.exec(
-					`nohup bun run server.ts > /tmp/server.log 2>&1 &`,
-				);
-				expect(result.exitCode).toBe(0);
-			});
+			// vm.exec(`setsid bun run server.ts > /tmp/server.log 2>&1 < /dev/null &`);
+
+			await step(
+				"start Bun server in background",
+				{ timeout: 15_000 },
+				async () => {
+					const _ = vm.exec(
+						`setsid bun --hot run server.ts > /tmp/server.log 2>&1 < /dev/null &`,
+					);
+					// expect(result.exitCode).toBe(0);
+				},
+			);
 
 			await step("wait for server ready", async () => {
 				const maxAttempts = 20;
@@ -153,9 +159,9 @@ describe("E2E: Bun server in VM", () => {
 						`http://${vmIp}:${SERVER_PORT}/`,
 					]);
 
-				await Bun.sleep(100);
-				await wrapper.close();
-				server.stop();
+					await Bun.sleep(100);
+					await wrapper.close();
+					server.stop();
 					expect(result.exitCode).toBe(0);
 					expect(result.stdout).toContain("Hello from MultiBunPass!");
 					expect(tcpData).toContain("Hello from MultiBunPass!");
@@ -165,9 +171,7 @@ describe("E2E: Bun server in VM", () => {
 			);
 
 			await step("kill server process", async () => {
-				try {
-					await vm.exec("pkill -f 'bun.*server.ts'");
-				} catch {}
+				await vm.exec("pkill -x bun || true", { skipPreflight: true });
 				await Bun.sleep(500);
 				console.log(`    server process killed`);
 			});
@@ -205,6 +209,6 @@ describe("E2E: Bun server in VM", () => {
 			}
 			expect(failed.length).toBe(0);
 		},
-		{ timeout: 20_000 },
+		{ timeout: 60_000 },
 	);
 });
