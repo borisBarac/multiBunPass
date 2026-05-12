@@ -14,10 +14,10 @@ export class VM {
 	/** Remote path inside the VM where files are deployed (e.g. `"~/app/"`). */
 	readonly remotePath: string;
 
-	constructor(name: string, localPath: string, remotePath?: string) {
+	constructor(name: string, localPath: string) {
 		this.name = name;
 		this.localPath = localPath;
-		this.remotePath = remotePath || getDefaultRemotePath();
+		this.remotePath = getDefaultRemotePath();
 	}
 
 	/**

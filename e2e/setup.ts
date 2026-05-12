@@ -55,7 +55,7 @@ async function main() {
 
 		try {
 			console.log(`  creating (this takes ~1-2 min)...`);
-			await client.create(name, tmp, "~/app/");
+			await client.create(name, tmp);
 			console.log(`  created and provisioned\n`);
 			results.push({ name, action: "created" });
 		} finally {

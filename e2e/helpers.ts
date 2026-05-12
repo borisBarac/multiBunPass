@@ -85,7 +85,6 @@ export async function setupVM(
 	client: MultiBunPassClient,
 	vmName: string,
 	tmpDir: string,
-	remotePath: string,
 ) {
 	const vms = await client.list();
 	const existing = vms.find((v) => v.name === vmName);
@@ -97,11 +96,11 @@ export async function setupVM(
 	}
 
 	console.log(`    VM "${vmName}" already exists (state=${existing.state})`);
-	const vm = client.getUnsafe(vmName, tmpDir, remotePath);
+	const vm = client.getUnsafe(vmName, tmpDir);
 	if (existing.state !== "Running") {
 		await vm.start();
 	}
-	const resolvedDest = expandTilde(remotePath);
+	const resolvedDest = expandTilde(vm.remotePath);
 	await execMultipass(["exec", vmName, "--", "mkdir", "-p", resolvedDest]);
 	await vm.pushFiles();
 	return vm;

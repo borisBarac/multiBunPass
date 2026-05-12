@@ -14,7 +14,6 @@ import {
 const VM_NAME = Bun.env.E2E_VM_NAME || "mbp-e2e-lifecycle";
 const CLEANUP = Bun.env.E2E_CLEANUP === "true";
 const STREAM_PORT = Number(Bun.env.E2E_STREAM_PORT) || 19876;
-const E2E_REMOTE_PATH = "~/app/";
 
 let client: MultiBunPassClient;
 let tmpDir: string;
@@ -61,7 +60,7 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 		);
 
 		await step("create or reuse VM", { critical: true }, async () => {
-			await setupVM(client, VM_NAME, tmpDir, E2E_REMOTE_PATH);
+			await setupVM(client, VM_NAME, tmpDir);
 		});
 
 		await step("list includes new VM", async () => {
@@ -85,7 +84,7 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 		});
 
 		{
-			const vm = await client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
+			const vm = await client.get(VM_NAME, tmpDir);
 
 			await step("exec: bun --version", async () => {
 				const result = await vm.exec("bun --version");
@@ -110,7 +109,7 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 			});
 
 			await step("remotePath is accessible on the VM instance", async () => {
-				expect(vm.remotePath).toBe(E2E_REMOTE_PATH);
+				expect(vm.remotePath).toBe("~/app/");
 			});
 
 			await step("stop VM", async () => {
@@ -152,7 +151,7 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 					},
 				});
 
-				const vm = await client.get(VM_NAME, tmpDir, E2E_REMOTE_PATH);
+				const vm = await client.get(VM_NAME, tmpDir);
 				const result = await vm.exec("bun --version", {
 					streamPort: STREAM_PORT,
 				});

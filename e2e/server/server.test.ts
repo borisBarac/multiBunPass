@@ -15,7 +15,6 @@ const VM_NAME = Bun.env.E2E_VM_NAME || "mbp-e2e-server";
 const CLEANUP = Bun.env.E2E_CLEANUP === "true";
 const STREAM_PORT = Number(Bun.env.E2E_STREAM_PORT) || 19876;
 const SERVER_PORT = 3000;
-const E2E_REMOTE_PATH = "~/app/";
 
 const FIXTURE_PATH = join(import.meta.dir, "fixtures", "server.ts");
 
@@ -58,7 +57,7 @@ describe("E2E: Bun server in VM", () => {
 		);
 
 		await step("create or reuse VM", { critical: true }, async () => {
-			vm = await setupVM(client, VM_NAME, tmpDir, E2E_REMOTE_PATH);
+			vm = await setupVM(client, VM_NAME, tmpDir);
 			console.log(`    vm.name=${vm.name}`);
 		});
 

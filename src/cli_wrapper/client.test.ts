@@ -159,11 +159,6 @@ describe("MultiBunPassClient", () => {
 		expect(calls).toHaveLength(0);
 	});
 
-	test("getUnsafe respects custom remotePath", () => {
-		const vm = client.getUnsafe("myvm", "/host/folder", "~/custom/");
-		expect(vm.remotePath).toBe("~/custom/");
-	});
-
 	test("create runs launch → cloud-init wait → transfer → verify", async () => {
 		const vm = await client.create("newvm", "/my/project");
 		expect(vm).toBeInstanceOf(VM);
@@ -184,12 +179,6 @@ describe("MultiBunPassClient", () => {
 			"/my/project",
 			"newvm:/home/ubuntu/app/",
 		]);
-	});
-
-	test("create uses custom remotePath", async () => {
-		const _vm = await client.create("newvm", "/my/project", "~/src/");
-		const transferCall = calls.find((c) => c[0] === "transfer");
-		expect(transferCall).toContain("newvm:/home/ubuntu/src/");
 	});
 
 	test("info returns parsed VMDetailedInfo", async () => {

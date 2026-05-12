@@ -10,25 +10,16 @@ export const builder = {
 		demandOption: true,
 		description: "Local project folder path",
 	},
-	"remote-path": {
-		type: "string" as const,
-		description: "Remote path inside VM (default: ~/app/)",
-	},
 };
 
 interface Args {
 	name: string;
 	"local-path": string;
-	"remote-path"?: string;
 	json: boolean;
 }
 
 export async function handler(argv: ArgumentsCamelCase<Args>): Promise<void> {
-	const vm = await client.get(
-		argv.name,
-		argv["local-path"],
-		argv["remote-path"] || undefined,
-	);
+	const vm = await client.get(argv.name, argv["local-path"]);
 	await vm.pushFiles();
 	if (argv.json) {
 		process.stdout.write(

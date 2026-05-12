@@ -40,9 +40,9 @@ export function registerLifecycleTools(
 				"Launch a new Multipass VM with Bun pre-installed via cloud-init, then transfer a local project folder into it. Returns once the VM is fully provisioned and code is in place.",
 			inputSchema: CreateVMSchema,
 		},
-		async ({ name, localPath, remotePath }) => {
+		async ({ name, localPath }) => {
 			try {
-				await client.create(name, localPath, remotePath);
+				await client.create(name, localPath);
 				return {
 					content: [
 						{

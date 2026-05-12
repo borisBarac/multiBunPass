@@ -14,11 +14,11 @@ export function registerExecTool(
 				"Run a shell command inside a VM. Commands run in the project directory by default (~/app/). Returns stdout, stderr, exit code, and a timedOut flag if the command exceeded the timeout.",
 			inputSchema: ExecVMSchema,
 		},
-		async ({ name, command, localPath, remotePath, timeout }) => {
+		async ({ name, command, localPath, timeout }) => {
 			let timedOut = false;
 
 			try {
-				const vm = await client.get(name, localPath ?? "", remotePath);
+				const vm = await client.get(name, localPath ?? "");
 
 				const execPromise = vm.exec(command, { skipPreflight: !localPath });
 

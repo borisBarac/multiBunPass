@@ -29,7 +29,6 @@ export type VMDetailedInfo = {
 export type CreateVMOptions = {
 	name: string;
 	localPath: string;
-	remotePath?: string;
 };
 
 export type ExecOptions = {

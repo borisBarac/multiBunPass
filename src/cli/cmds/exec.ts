@@ -11,10 +11,6 @@ export const builder = {
 		demandOption: true,
 		description: "Local project folder path",
 	},
-	"remote-path": {
-		type: "string" as const,
-		description: "Remote path inside VM (default: ~/app/)",
-	},
 	"stream-port": {
 		type: "number" as const,
 		description: "TCP port to stream output to",
@@ -28,7 +24,6 @@ export const builder = {
 interface Args {
 	name: string;
 	"local-path": string;
-	"remote-path"?: string;
 	"stream-port"?: number;
 	cwd?: string;
 	json: boolean;
@@ -50,11 +45,7 @@ export async function handler(argv: ArgumentsCamelCase<Args>): Promise<void> {
 		opts.cwd = argv.cwd;
 	}
 
-	const vm = await client.get(
-		argv.name,
-		argv["local-path"],
-		argv["remote-path"] || undefined,
-	);
+	const vm = await client.get(argv.name, argv["local-path"]);
 	const result = await vm.exec(command, opts);
 
 	if (argv.json) {

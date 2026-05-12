@@ -42,11 +42,6 @@ beforeEach(() => {
 describe("VM", () => {
 	const vm = new VM("testvm", "/host/path", "~/app/");
 
-	test("remotePath defaults to ~/app/ when not provided", () => {
-		const vmDefault = new VM("testvm", "/host/path");
-		expect(vmDefault.remotePath).toBe("~/app/");
-	});
-
 	test("exec pre-flights cwd check and runs command with cd", async () => {
 		await vm.exec("node app.js");
 		expect(calls).toHaveLength(2);

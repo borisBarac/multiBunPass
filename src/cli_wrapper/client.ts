@@ -37,12 +37,8 @@ export class MultiBunPassClient {
 	 * @param remotePath - Destination path inside the VM. Defaults to `"~/app/"`.
 	 * @returns A ready-to-use {@link VM} instance.
 	 */
-	async create(
-		name: string,
-		localPath: string,
-		remotePath?: string,
-	): Promise<VM> {
-		const dest = remotePath || getDefaultRemotePath();
+	async create(name: string, localPath: string): Promise<VM> {
+		const dest = getDefaultRemotePath();
 		log.info(`creating VM "${name}" from ${localPath}`);
 
 		const configPath = await writeCloudConfigTempFile();
@@ -116,7 +112,7 @@ export class MultiBunPassClient {
 		}
 
 		log.info(`VM "${name}" created successfully`);
-		return new VM(name, localPath, remotePath);
+		return new VM(name, localPath);
 	}
 
 	/**
@@ -148,8 +144,8 @@ export class MultiBunPassClient {
 	 * @param remotePath - Remote path inside the VM. Defaults to `"~/app/"`.
 	 * @returns A {@link VM} instance.
 	 */
-	async get(name: string, localPath: string, remotePath?: string): Promise<VM> {
-		const dest = expandTilde(remotePath ?? getDefaultRemotePath());
+	async get(name: string, localPath: string): Promise<VM> {
+		const dest = expandTilde(getDefaultRemotePath());
 
 		const vms = await this.list();
 		if (!vms.find((v) => v.name === name)) {
@@ -166,7 +162,7 @@ export class MultiBunPassClient {
 			);
 		}
 
-		return new VM(name, localPath, remotePath);
+		return new VM(name, localPath);
 	}
 
 	/**
@@ -207,7 +203,7 @@ export class MultiBunPassClient {
 	 * @param remotePath - Remote path inside the VM. Defaults to `"~/app/"`.
 	 * @returns A {@link VM} instance.
 	 */
-	getUnsafe(name: string, localPath: string, remotePath?: string): VM {
-		return new VM(name, localPath, remotePath);
+	getUnsafe(name: string, localPath: string): VM {
+		return new VM(name, localPath);
 	}
 }
