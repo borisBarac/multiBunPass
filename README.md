@@ -1,17 +1,20 @@
 # MultiBunPass
 
-Spin up Bun-ready Ubuntu VMs in seconds. Develop, test, and run your code in isolated environments without leaving your terminal.
+**Multipass is great, but the friction is real.** Spinning up a simple server (files + tool install) usually requires 5 or 6 commands and a custom `cloud-init` config. It's error-prone for humans, and even worse for AI agents—who frequently lose track of their environment.
 
-MultiBunPass wraps [Multipass](https://multipass.run/) to give you instant, disposable VMs with Bun pre-installed. Write code locally, push it to a VM, run it there. No Docker, no cloud accounts, no setup friction.
+**MultiBunPass** makes Multipass effortless. Get isolated, **Bun-preinstalled** Ubuntu VMs in seconds, designed specifically for rapid development sessions and AI workflows.
+
+---
 
 ## Why MultiBunPass?
 
-- **Zero-config Bun VMs** -- `mbp create my-app --local-path ./project` and you're done
-- **Three interfaces** -- CLI for humans, SDK for programs, MCP server for AI agents
-- **Automatic provisioning** -- Ubuntu LTS, Bun, cloud-init, file transfer, all handled for you
-- **Bidirectional sync** -- push files to VMs, stream output back over TCP
-- **Customizable VM provisioning** -- override the built-in cloud-init with your own YAML to install any packages, run scripts, or configure the VM however you need
-- **Built for AI workflows** -- expose your VMs as MCP tools that any LLM can call
+* **Zero-Config Bun VMs** – Every VM comes with **Bun installed** and ready to go. Run `mbp create` and start coding immediately.
+* **Built for AI Agents** – Expose VMs via **MCP**. No more agents getting lost; they get a structured, reliable sandbox they can actually navigate.
+* **TCP Output Streaming** – Stream command output directly to a TCP server for real-time monitoring and centralized logging.
+* **Smart `exec` Commands** – Automatically loads profiles and environment variables so your scripts never fail due to missing paths.
+* **Three Interfaces** – A **CLI** for humans, an **SDK** for programs, and an **MCP server** for LLMs.
+* **Folder Sync** – Automatically push local files to your VM
+* **Customizable** – Use the built-in defaults or override with your own `cloud-init` YAML for bespoke environments.
 
 ## Requirements
 
