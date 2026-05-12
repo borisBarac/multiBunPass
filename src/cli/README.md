@@ -21,16 +21,6 @@ bun add -g @boris.barac/multibunpass
 mbp list
 ```
 
-### Run without installing (bunx)
-
-```bash
-bunx @boris.barac/multibunpass mbp list
-bunx @boris.barac/multibunpass mbp create my-app --local-path ./project
-bunx @boris.barac/multibunpass mbp exec my-app --local-path ./project -- bun test
-```
-
-Every `mbp` subcommand works the same way — just prefix with `bunx @boris.barac/multibunpass mbp`.
-
 ## Global Options
 
 | Flag | Type | Default | Description |

@@ -34,15 +34,6 @@ For CLI and MCP server (global install):
 ```bash
 bun add -g @boris.barac/multibunpass
 ```
-
-Or run without installing via `bunx`:
-
-```bash
-bunx @boris.barac/multibunpass mbp list
-bunx @boris.barac/multibunpass mbp create my-app --local-path ./my-project
-bunx @boris.barac/multibunpass mbp exec my-app --local-path ./my-project -- command you want to execute
-```
-
 ### Create a VM and run your code
 
 ```bash

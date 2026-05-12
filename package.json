@@ -1,6 +1,6 @@
 {
 	"name": "@boris.barac/multibunpass",
-	"version": "0.1.1",
+	"version": "0.1.3",
 	"description": "Multipass is great, but the friction is real. MultiBunPass makes Multipass effortless — get isolated, Bun-preinstalled Ubuntu VMs in seconds, designed for rapid development sessions and AI workflows.",
 	"author": "Boris Barac (https://www.npmjs.com/~boris.barac)",
 	"license": "MIT",
