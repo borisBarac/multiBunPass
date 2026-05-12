@@ -58,7 +58,9 @@ export class VM {
 			}
 		}
 
-		const fullCommand = `cd '${shellEscape(cwd)}' && ${command}`;
+		// bun exec usually does not load the .profile on time, and you get errors you do not have things installed
+		// this gets around that
+		const fullCommand = `source ~/.profile && cd '${shellEscape(cwd)}' && ${command}`;
 
 		if (options?.streamPort === undefined) {
 			return this.runMultipassExec(fullCommand);

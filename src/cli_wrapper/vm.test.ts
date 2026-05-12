@@ -59,7 +59,7 @@ describe("VM", () => {
 			"--",
 			"bash",
 			"-lc",
-			"cd '/home/ubuntu/app/' && node app.js",
+			"source ~/.profile && cd '/home/ubuntu/app/' && node app.js",
 		]);
 	});
 
@@ -71,7 +71,7 @@ describe("VM", () => {
 			"--",
 			"bash",
 			"-lc",
-			"cd '/tmp' && ls",
+			"source ~/.profile && cd '/tmp' && ls",
 		]);
 	});
 
