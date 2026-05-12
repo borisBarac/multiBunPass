@@ -1,10 +1,41 @@
 {
 	"name": "multibunpass",
+	"version": "0.1.0",
+	"description": "Multipass is great, but the friction is real. MultiBunPass makes Multipass effortless — get isolated, Bun-preinstalled Ubuntu VMs in seconds, designed for rapid development sessions and AI workflows.",
+	"author": "Boris Barac (https://www.npmjs.com/~boris.barac)",
+	"license": "MIT",
+	"homepage": "https://github.com/borisBarac/multiBunPass#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/borisBarac/multiBunPass.git"
+	},
+	"bugs": {
+		"url": "https://github.com/borisBarac/multiBunPass/issues"
+	},
+	"keywords": [
+		"multipass",
+		"bun",
+		"vm",
+		"ubuntu",
+		"mcp",
+		"ai",
+		"sandbox"
+	],
+	"main": "index.ts",
 	"module": "index.ts",
+	"types": "index.ts",
+	"exports": {
+		".": "./index.ts"
+	},
 	"bin": {
 		"multibunpass-mcp": "src/mcp/index.ts",
 		"mbp": "src/cli/index.ts"
 	},
+	"files": [
+		"index.ts",
+		"src/",
+		"README.md"
+	],
 	"type": "module",
 	"scripts": {
 		"lint": "biome check .",
@@ -22,9 +53,6 @@
 		"@biomejs/biome": "^2.4.12",
 		"@types/bun": "latest",
 		"@types/yargs": "^17.0.35"
-	},
-	"peerDependencies": {
-		"typescript": "^5"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/server": "^2.0.0-alpha.2",
