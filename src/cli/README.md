@@ -108,6 +108,22 @@ mbp exec <name> --local-path <path> [--remote-path <path>] [--stream-port <port>
 | `--cwd` | no | — | Working directory inside the VM |
 | `-- command...` | no | — | Command to execute (after `--`) |
 
+#### Streaming
+
+When `--stream-port` is set, `exec` connects to a TCP listener on that port and streams stdout/stderr in real time. A listener must already be running before the command is executed.
+
+Streaming avoids the need for SSH entirely: the VM runs the command, but output arrives on your host over TCP. This is especially useful for AI agents — they can start a listener, run `exec` with `--stream-port`, and read structured output from the socket without managing SSH sessions or parsing remote terminal output.
+
+```sh
+# Terminal 1: start a listener (e.g. netcat)
+nc -l localhost 8080
+
+# Terminal 2: stream output to that port
+mbp exec my-app --local-path ./project --stream-port 8080 -- bun test
+```
+
+If no listener is found, `exec` returns an error: *"Connection refused on port 8080 — is a listener running? (e.g. nc -l localhost 8080)"*.
+
 ### mbp sync
 
 Sync local files to a VM. Clears the remote directory first, then transfers files.

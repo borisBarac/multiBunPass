@@ -79,6 +79,24 @@ mbp delete my-app                           # permanently remove
 
 Every command supports `--json` for machine-readable output.
 
+### TCP Output Streaming
+
+
+Works with any TCP server. The `exec` command connects to the port and pipes stdout/stderr in real time.
+
+**No SSH required.** The VM runs your server, but stdout/stderr are streamed back to your machine over a plain TCP socket — no SSH keys, no remote shells, no connection management. For AI agents this is especially useful: they can start a TCP listener, run `exec` with `--stream-port`, and read structured output directly from the socket without juggling SSH sessions or parsing remote terminal output.
+
+Stream command output to a TCP listener for real-time monitoring or centralized logging:
+
+```bash
+# Terminal 1: start a listener
+nc -l localhost 8080
+
+# Terminal 2: run with streaming
+mbp exec my-app --local-path ./project --stream-port 8080 -- bun test
+```
+
+
 ### SDK (`cli_wrapper`)
 
 Use MultiBunPass as a library in your own tools:
