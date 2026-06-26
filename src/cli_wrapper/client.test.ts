@@ -159,6 +159,12 @@ describe("MultiBunPassClient", () => {
 		expect(calls).toHaveLength(0);
 	});
 
+	test("getUnsafe normalizes custom remote path", () => {
+		const vm = client.getUnsafe("myvm", "/host/folder", "/srv/project");
+		expect(vm.remotePath).toBe("/srv/project/");
+		expect(calls).toHaveLength(0);
+	});
+
 	test("create runs launch → cloud-init wait → transfer → verify", async () => {
 		const vm = await client.create("newvm", "/my/project");
 		expect(vm).toBeInstanceOf(VM);
@@ -178,6 +184,29 @@ describe("MultiBunPassClient", () => {
 			"--recursive",
 			"/my/project",
 			"newvm:/home/ubuntu/app/",
+		]);
+	});
+
+	test("create supports custom remote path without trailing slash", async () => {
+		const vm = await client.create("newvm", "/my/project", "/srv/project");
+		expect(vm.remotePath).toBe("/srv/project/");
+
+		const mkdirCall = calls.find((c) => c[0] === "exec" && c.includes("mkdir"));
+		expect(mkdirCall).toEqual([
+			"exec",
+			"newvm",
+			"--",
+			"mkdir",
+			"-p",
+			"/srv/project/",
+		]);
+
+		const transferCall = calls.find((c) => c[0] === "transfer");
+		expect(transferCall).toEqual([
+			"transfer",
+			"--recursive",
+			"/my/project",
+			"newvm:/srv/project/",
 		]);
 	});
 

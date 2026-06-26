@@ -39,9 +39,7 @@ export async function step(
 			await Promise.race([
 				fn(),
 				Bun.sleep(stepTimeout).then(() => {
-					throw new Error(
-						`step "${name}" timed out after ${stepTimeout}ms`,
-					);
+					throw new Error(`step "${name}" timed out after ${stepTimeout}ms`);
 				}),
 			]);
 		} else {
@@ -62,13 +60,15 @@ export async function step(
 	}
 }
 
-const resultsSymbol = Symbol.for("multibunpass.e2e.results");
+const resultsStore = globalThis as typeof globalThis & {
+	__multibunpassE2eResults?: StepResult[];
+};
 
 function getResults(): StepResult[] {
-	if (!(globalThis as any)[resultsSymbol]) {
-		(globalThis as any)[resultsSymbol] = [];
+	if (!resultsStore.__multibunpassE2eResults) {
+		resultsStore.__multibunpassE2eResults = [];
 	}
-	return (globalThis as any)[resultsSymbol];
+	return resultsStore.__multibunpassE2eResults;
 }
 
 export function getStepResults(): StepResult[] {
@@ -76,7 +76,7 @@ export function getStepResults(): StepResult[] {
 }
 
 export function resetStepResults(): void {
-	(globalThis as any)[resultsSymbol] = [];
+	resultsStore.__multibunpassE2eResults = [];
 }
 
 export function printSummary() {

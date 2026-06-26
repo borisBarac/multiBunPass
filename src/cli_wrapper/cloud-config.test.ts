@@ -50,7 +50,7 @@ describe("resolveCloudConfig", () => {
 
 	test("returns DEFAULT_CLOUD_CONFIG when no files exist and no env var set", async () => {
 		const { resolveCloudConfig } = await import(
-			"./cloud-config?t=" + Date.now()
+			`./cloud-config?t=${Date.now()}`
 		);
 		const result = await resolveCloudConfig();
 		expect(result).toBe(DEFAULT_CLOUD_CONFIG);
@@ -64,7 +64,7 @@ describe("resolveCloudConfig", () => {
 		process.env.MBP_CLOUD_CONFIG = filePath;
 
 		const { resolveCloudConfig } = await import(
-			"./cloud-config?t=" + Date.now()
+			`./cloud-config?t=${Date.now()}`
 		);
 		const result = await resolveCloudConfig();
 		expect(result).toBe(CUSTOM_YAML);
@@ -74,7 +74,7 @@ describe("resolveCloudConfig", () => {
 		process.env.MBP_CLOUD_CONFIG = "/tmp/this-file-does-not-exist-abc123.yaml";
 
 		const { resolveCloudConfig } = await import(
-			"./cloud-config?t=" + Date.now()
+			`./cloud-config?t=${Date.now()}`
 		);
 		expect(resolveCloudConfig()).rejects.toThrow(
 			'MBP_CLOUD_CONFIG is set to "/tmp/this-file-does-not-exist-abc123.yaml" but file does not exist',
@@ -90,7 +90,7 @@ describe("resolveCloudConfig", () => {
 
 		try {
 			const { resolveCloudConfig } = await import(
-				"./cloud-config?t=" + Date.now()
+				`./cloud-config?t=${Date.now()}`
 			);
 			const result = await resolveCloudConfig();
 			expect(result).toBe(CUSTOM_YAML);
@@ -110,7 +110,7 @@ describe("resolveCloudConfig", () => {
 
 		try {
 			const { resolveCloudConfig } = await import(
-				"./cloud-config?t=" + Date.now()
+				`./cloud-config?t=${Date.now()}`
 			);
 			const result = await resolveCloudConfig();
 			expect(result).toBe(CUSTOM_YAML);
@@ -131,7 +131,7 @@ describe("resolveCloudConfig", () => {
 
 		try {
 			const { resolveCloudConfig } = await import(
-				"./cloud-config?t=" + Date.now()
+				`./cloud-config?t=${Date.now()}`
 			);
 			const result = await resolveCloudConfig();
 			expect(result).toBe("priority: cwd");
@@ -153,7 +153,7 @@ describe("resolveCloudConfig", () => {
 
 		try {
 			const { resolveCloudConfig } = await import(
-				"./cloud-config?t=" + Date.now()
+				`./cloud-config?t=${Date.now()}`
 			);
 			const result = await resolveCloudConfig();
 			expect(result).toBe("source: env");
@@ -170,7 +170,7 @@ describe("resolveCloudConfig", () => {
 
 		try {
 			const { resolveCloudConfig } = await import(
-				"./cloud-config?t=" + Date.now()
+				`./cloud-config?t=${Date.now()}`
 			);
 			const result = await resolveCloudConfig();
 			expect(result).toBe(DEFAULT_CLOUD_CONFIG);

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { expandTilde, shellEscape } from "./utils";
+import { ensureTrailingSlash, expandTilde, shellEscape } from "./utils";
 
 describe("shellEscape", () => {
 	test("returns plain paths unchanged", () => {
@@ -38,5 +38,15 @@ describe("expandTilde", () => {
 
 	test("leaves relative paths without tilde unchanged", () => {
 		expect(expandTilde("some/path")).toBe("some/path");
+	});
+});
+
+describe("ensureTrailingSlash", () => {
+	test("adds a slash when missing", () => {
+		expect(ensureTrailingSlash("/home/ubuntu/app")).toBe("/home/ubuntu/app/");
+	});
+
+	test("leaves a trailing slash unchanged", () => {
+		expect(ensureTrailingSlash("~/app/")).toBe("~/app/");
 	});
 });

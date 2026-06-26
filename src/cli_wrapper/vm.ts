@@ -4,7 +4,12 @@ import { execMultipass, setOutputWrapper } from "./cli";
 import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
 import type { ExecOptions, ExecResult } from "./types";
-import { expandTilde, getDefaultRemotePath, shellEscape } from "./utils";
+import {
+	ensureTrailingSlash,
+	expandTilde,
+	getDefaultRemotePath,
+	shellEscape,
+} from "./utils";
 
 export class VM {
 	/** Multipass VM name. */
@@ -14,10 +19,14 @@ export class VM {
 	/** Remote path inside the VM where files are deployed (e.g. `"~/app/"`). */
 	readonly remotePath: string;
 
-	constructor(name: string, localPath: string) {
+	constructor(
+		name: string,
+		localPath: string,
+		remotePath = getDefaultRemotePath(),
+	) {
 		this.name = name;
 		this.localPath = localPath;
-		this.remotePath = getDefaultRemotePath();
+		this.remotePath = ensureTrailingSlash(remotePath);
 	}
 
 	/**
@@ -135,7 +144,7 @@ export class VM {
 	 * @returns The result of the `multipass transfer` command.
 	 */
 	async pushFiles(): Promise<ExecResult> {
-		const resolvedDest = expandTilde(this.remotePath);
+		const resolvedDest = expandTilde(ensureTrailingSlash(this.remotePath));
 		if (resolvedDest && resolvedDest !== "/") {
 			log.info(`pushFiles: clearing ${resolvedDest} on ${this.name}`);
 			try {
@@ -144,8 +153,8 @@ export class VM {
 					this.name,
 					"--",
 					"bash",
-					"-c",
-					`rm -rf '${shellEscape(resolvedDest)}'*`,
+					"-lc",
+					`shopt -s dotglob nullglob && rm -rf -- '${shellEscape(resolvedDest)}'*`,
 				]);
 			} catch (err) {
 				log.warn(

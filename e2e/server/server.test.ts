@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { copyFileSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { OutputWrapper } from "../../src/out_stream";
 import { MultiBunPassClient, type VM } from "../../src/cli_wrapper";
+import { OutputWrapper } from "../../src/out_stream";
 import {
 	getStepResults,
 	printSummary,
@@ -107,7 +107,11 @@ describe("E2E: Bun server in VM", () => {
 			await step("get VM IP address", async () => {
 				const info = await client.info(VM_NAME);
 				expect(info.ipv4.length).toBeGreaterThan(0);
-				vmIp = info.ipv4[0]!;
+				const firstIp = info.ipv4[0];
+				if (!firstIp) {
+					throw new Error(`VM "${VM_NAME}" has no IPv4 address`);
+				}
+				vmIp = firstIp;
 				console.log(`    ip=${vmIp} (all: ${info.ipv4.join(", ")})`);
 			});
 

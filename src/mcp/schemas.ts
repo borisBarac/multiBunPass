@@ -7,6 +7,7 @@ export const CreateVMSchema = z.object({
 	localPath: z
 		.string()
 		.describe("Local project folder path to transfer into the VM"),
+	remotePath: z.string().optional().describe("Destination path inside the VM"),
 });
 
 export const DeleteVMSchema = z.object({
@@ -40,6 +41,7 @@ export const ExecVMSchema = z.object({
 		.string()
 		.optional()
 		.describe("Local project folder path (used to create VM handle)"),
+	remotePath: z.string().optional().describe("Destination path inside the VM"),
 	timeout: z
 		.number()
 		.default(60)
@@ -49,4 +51,5 @@ export const ExecVMSchema = z.object({
 export const SyncVMSchema = z.object({
 	name: z.string().describe("Name of the VM to sync code to"),
 	localPath: z.string().describe("Local project folder path to transfer"),
+	remotePath: z.string().optional().describe("Destination path inside the VM"),
 });

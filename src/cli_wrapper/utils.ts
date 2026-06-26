@@ -2,6 +2,10 @@ export function getDefaultRemotePath(): string {
 	return Bun.env.MBP_REMOTE_PATH || "~/app/";
 }
 
+export function ensureTrailingSlash(path: string): string {
+	return path.endsWith("/") ? path : `${path}/`;
+}
+
 export function expandTilde(path: string): string {
 	return path.startsWith("~/") ? `/home/ubuntu/${path.slice(2)}` : path;
 }

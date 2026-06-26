@@ -6,10 +6,10 @@ import type {
 } from "../cli_wrapper/types";
 
 type InternalOptions = Required<OutputWrapperOptions>;
+type BunSocket = Awaited<ReturnType<typeof Bun.connect>>;
 
 export class OutputWrapper {
-	// biome-ignore lint/suspicious/noExplicitAny: Bun socket types lack convenient imports
-	private client: any = null;
+	private client: BunSocket | null = null;
 	private opts: InternalOptions;
 	private bytesSent = 0;
 

@@ -8,7 +8,12 @@ import { waitForCloudInit } from "./cloud-init";
 import { log } from "./logger";
 import { parseVMInfo } from "./parsers";
 import type { ExecResult, VMInfo } from "./types";
-import { expandTilde, getDefaultRemotePath, shellEscape } from "./utils";
+import {
+	ensureTrailingSlash,
+	expandTilde,
+	getDefaultRemotePath,
+	shellEscape,
+} from "./utils";
 import { VM } from "./vm";
 
 export class MultiBunPassClient {
@@ -37,8 +42,12 @@ export class MultiBunPassClient {
 	 * @param remotePath - Destination path inside the VM. Defaults to `"~/app/"`.
 	 * @returns A ready-to-use {@link VM} instance.
 	 */
-	async create(name: string, localPath: string): Promise<VM> {
-		const dest = getDefaultRemotePath();
+	async create(
+		name: string,
+		localPath: string,
+		remotePath = getDefaultRemotePath(),
+	): Promise<VM> {
+		const dest = ensureTrailingSlash(remotePath);
 		log.info(`creating VM "${name}" from ${localPath}`);
 
 		const configPath = await writeCloudConfigTempFile();
@@ -112,7 +121,7 @@ export class MultiBunPassClient {
 		}
 
 		log.info(`VM "${name}" created successfully`);
-		return new VM(name, localPath);
+		return new VM(name, localPath, dest);
 	}
 
 	/**
@@ -144,8 +153,12 @@ export class MultiBunPassClient {
 	 * @param remotePath - Remote path inside the VM. Defaults to `"~/app/"`.
 	 * @returns A {@link VM} instance.
 	 */
-	async get(name: string, localPath: string): Promise<VM> {
-		const dest = expandTilde(getDefaultRemotePath());
+	async get(
+		name: string,
+		localPath: string,
+		remotePath = getDefaultRemotePath(),
+	): Promise<VM> {
+		const dest = expandTilde(ensureTrailingSlash(remotePath));
 
 		const vms = await this.list();
 		if (!vms.find((v) => v.name === name)) {
@@ -162,7 +175,7 @@ export class MultiBunPassClient {
 			);
 		}
 
-		return new VM(name, localPath);
+		return new VM(name, localPath, ensureTrailingSlash(remotePath));
 	}
 
 	/**
@@ -203,7 +216,11 @@ export class MultiBunPassClient {
 	 * @param remotePath - Remote path inside the VM. Defaults to `"~/app/"`.
 	 * @returns A {@link VM} instance.
 	 */
-	getUnsafe(name: string, localPath: string): VM {
-		return new VM(name, localPath);
+	getUnsafe(
+		name: string,
+		localPath: string,
+		remotePath = getDefaultRemotePath(),
+	): VM {
+		return new VM(name, localPath, ensureTrailingSlash(remotePath));
 	}
 }

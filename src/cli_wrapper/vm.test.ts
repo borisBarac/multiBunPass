@@ -42,6 +42,11 @@ beforeEach(() => {
 describe("VM", () => {
 	const vm = new VM("testvm", "/host/path", "~/app/");
 
+	test("normalizes remotePath with a trailing slash", () => {
+		const customVm = new VM("testvm", "/host/path", "/srv/app");
+		expect(customVm.remotePath).toBe("/srv/app/");
+	});
+
 	test("exec pre-flights cwd check and runs command with cd", async () => {
 		await vm.exec("node app.js");
 		expect(calls).toHaveLength(2);
@@ -106,8 +111,8 @@ describe("VM", () => {
 			"testvm",
 			"--",
 			"bash",
-			"-c",
-			"rm -rf '/home/ubuntu/app/'*",
+			"-lc",
+			"shopt -s dotglob nullglob && rm -rf -- '/home/ubuntu/app/'*",
 		]);
 		expect(calls[1]).toEqual([
 			"transfer",
