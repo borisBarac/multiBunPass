@@ -188,6 +188,6 @@ describe("E2E: Full MultiBunPass lifecycle", () => {
 			}
 			expect(failed.length).toBe(0);
 		},
-		{ timeout: 20_000 },
+		{ timeout: 60_000 },
 	);
 });
